@@ -1,0 +1,70 @@
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <script language="javascript" type="text/javascript" src="libraries/p5.js"></script>
+  <!-- uncomment lines below to include extra p5 libraries -->
+  <script language="javascript" src="libraries/p5.dom.js"></script>
+  <!--<script language="javascript" src="libraries/p5.sound.js"></script>-->
+  <script language="javascript" type="text/javascript" src="sketch.js"></script>
+  <script language="javascript" type="text/javascript" src="vertex.js"></script>
+  <script language="javascript" type="text/javascript" src="edge.js"></script>
+  <script language="javascript" type="text/javascript" src="region.js"></script>
+  <script language="javascript" type="text/javascript" src="data.json"></script>
+  <!-- this line removes any default padding and style. you might only need one of these values set. -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-AMS_CHTML-full" type="text/javascript"></script>
+  <link rel="stylesheet" type="text/css" href="index.css" />
+</head>
+
+<body>
+  <header>
+    <h1>Borel Reducibility</h1>
+  </header>
+  <div id="body">
+    <div id="canvasContainer"></div>
+    <div id="countgraphs" style="display:none">
+      <p>Isomorphism for countable graphs</p>
+      <h1 id="this-is-the-first-section">This is the first section</h1>
+      <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis
+        aute
+        irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+      <h2 id="this-is-a-subsection">This is a subsection</h2>
+      <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. <span class="math display">\[\tag{1}
+          f(z) = \frac{1}{2\pi i} \int_{\partial D(z, R)} \frac{f(w)}{w-z} dw\]</span></p>
+      <h1 id="this-is-the-second-section">This is the second section</h1>
+      <p>Here is an inline equation <span class="math inline">\(\sum\limits_{i=1}^{n} i^2 = \frac{n(n+1)(2n+1)}{6}\)</span>. Here is another inline equation <span class="math inline">\(\mathbb{Z} / 2\mathbb{Z} \times \mathbb{Z} / 2\mathbb{Z} \cong
+          V_{4}\)</span>.</p>
+    </div>
+    <div id="ergdiff" style="display:none">
+      <p>Isomorphism for ergodic diffeomorphisms</p>
+      <a href="/?id=countgraphs">Link to countable graphs</a>
+    </div>
+    <div id="ergmeas" style="display:none">
+      <p>Isomorphism for ergodic measure preserving transformations</p>
+    </div>
+    <div id="unitaryconj" style="display:none">
+      <p>Unitary conjugacy of normal operators</p>
+    </div>
+    <div id="newrelation" style="display:none">
+      <p>This is the new relation</p>
+    </div>
+    <div id="edge1" style="display:none">
+      <p>Proof of reduction of Iso countable graphs to Iso ergodic diff</p>
+    </div>
+    <div id="edge2" style="display:none">
+      <p>Proof of no reduction of iso ergodic meas preserving to iso countable graphs</p>
+    </div>
+    <div id="edge3" style="display:none">
+      <p>Proof of reduction of Iso ergodic diff to Iso ergodic meas preserving</p>
+    </div>
+    <div id="edge4" style="display:none">
+      <p>Proof of no reduction of iso ergodic meas preserving to unitary conj normal ops</p>
+    </div>
+    <div id="sinf" style="display:none">
+      <p>S Infinity Region</p>
+    </div>
+  </div>
+</body>
+
+</html>

@@ -1,0 +1,14 @@
+header {
+  margin: auto;
+  margin-top: 30px;
+  margin-bottom: 30px;
+}
+header h1 {
+  text-align: center;
+}
+@media screen and (min-width: 1200px) {
+  div#body {
+    margin-left: calc((100% - 1200px) / 2);
+    margin-right: calc((100% - 1200px) / 2);
+  }
+}
