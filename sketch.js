@@ -1,8 +1,11 @@
 let vlist = [];
 let elist = [];
+let vlistcount = [];
+let elistcount = [];
 let shownElement;
 let rlist = [];
 let isHover;
+let vdict = {};
 
 // TODO
 // Use p elements for displaying text
@@ -14,20 +17,38 @@ let isHover;
 // Create Github project
 // Create pull request guide
 
+function preload() {
+  for (let i = 0; i < data.equiv.length; i++) {
+    item = data.equiv[i];
+    vdict[item.id] = loadStrings("equiv/" + item.id + ".html");
+  }
+}
+
 function setup() {
   canvas = createCanvas(1200, 800);
   canvas.parent('canvasContainer');
   
-  if (window.location.href.indexOf("id") > -1) {
-    let urlid = getUrlVars()["id"];
-    shownElement = select("#" + urlid);
-    shownElement.style("display", "");
-  }
-  
+  let body = select("#body");
   for (let i = 0; i < data.equiv.length; i++) {
     item = data.equiv[i];
-    element = select("#" + item.id);
-    vlist.push(new Vertex(item.pos[0], item.pos[1], item.name, item.label, item.labeloffset, item.categories, element));
+    element = createDiv();
+    element.id(item.id);
+    element.style("display", "none");
+    element.parent(body);
+    
+    if (item.id in vdict) {
+      let result = vdict[item.id];
+      let start = result.indexOf("<body>") + 1;
+      let end = result.indexOf("</body>");
+      let equivbody = result.slice(start, end).join('\n');
+      element.html(equivbody);
+    }
+    
+    if ("countable" in item.categories) {
+      vlistcount.push(new Vertex(item.pos[0], item.pos[1], item.name, item.label, item.labeloffset, item.categories, element));
+    } else {
+      vlist.push(new Vertex(item.pos[0], item.pos[1], item.name, item.label, item.labeloffset, item.categories, element));
+    }
   }
   
   for (let i = 0; i < data.reduc.length; i++) {
@@ -65,6 +86,12 @@ function setup() {
   rlist.push(new Region(1000, 200, 1100, 250, "Polish group actions", x => {
     return (x-1050)*(x-1050) / 1500 + 200;
   }, 50, 1250, "polish", element, color(0, 200, 0)));
+  
+  if (window.location.href.indexOf("id") > -1) {
+    let urlid = getUrlVars()["id"];
+    shownElement = select("#" + urlid);
+    shownElement.style("display", "");
+  }
 }
 
 function draw() {

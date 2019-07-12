@@ -1,6 +1,6 @@
 \documentclass{article}
 
-\title{this is my title}
+\newcommand{\Re}{\mathbb{R}}
 
 % Compile using
 % pandoc test.tex -s --mathjax -o test.html
@@ -15,7 +15,7 @@ Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor 
 
 \subsection{This is a subsection}
 
-Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. $\Re$.
 \begin{equation}\tag{1}
   f(z) = \frac{1}{2\pi i} \int_{\partial D(z, R)} \frac{f(w)}{w-z} dw
 \end{equation}
@@ -24,5 +24,7 @@ Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor 
 
 Here is an inline equation $\sum\limits_{i=1}^{n} i^2 = \frac{n(n+1)(2n+1)}{6}$.
 Here is another inline equation $\mathbb{Z} / 2\mathbb{Z} \times \mathbb{Z} / 2\mathbb{Z} \cong V_{4}$.
+
+\ref{1}
 
 \end{document}
