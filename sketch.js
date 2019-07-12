@@ -47,7 +47,7 @@ function setup() {
       element.html(equivbody);
     }
     
-    if ("countable" in item.categories) {
+    if (item.categories.indexOf("countable") >= 0) {
       vlistcount.push(new Vertex(item.pos[0], item.pos[1], item.name, item.label, item.labeloffset, item.categories, element));
     } else {
       vlist.push(new Vertex(item.pos[0], item.pos[1], item.name, item.label, item.labeloffset, item.categories, element));
@@ -109,7 +109,7 @@ function draw() {
   stroke(0);
   strokeWeight(2);
   textSize(14);
-  text(String(mx) + ", " + String(my), 1120, 790);
+  text(String(floor(mx)) + ", " + String(floor(my)), 1120, 790);
   
   // Display state for regular graph
   if (!isCountDisplay) {

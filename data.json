@@ -55,6 +55,14 @@ let data = {
       "labeloffset": [0, 0],
       "pos": [1061, 650],
       "id": "abpolishactions"
+    },
+    {
+      "name" : "Test countable equiv",
+      "label": "Test countable equiv",
+      "categories": ["countable"],
+      "labeloffset": [0, 0],
+      "pos": [1061, 650],
+      "id": "testcount"
     }
   ],
   "reduc": [
