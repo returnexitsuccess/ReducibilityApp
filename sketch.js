@@ -1,11 +1,14 @@
 let vlist = [];
 let elist = [];
-let vlistcount = [];
-let elistcount = [];
 let shownElement;
 let rlist = [];
 let isHover;
 let vdict = {};
+
+let vlistcount = [];
+let elistcount = [];
+let countRegion;
+let isCountDisplay = false;
 
 // TODO
 // Use p elements for displaying text
@@ -87,6 +90,10 @@ function setup() {
     return (x-1050)*(x-1050) / 1500 + 200;
   }, 50, 1250, "polish", element, color(0, 200, 0)));
   
+  countRegion = new Region(100, 700, 150, 750, "Countable", x => {
+    return (x-600)*(x-600) / 1500 + 600;
+  }, 100, 200, "countable", null, color(0, 200, 200));
+  
   if (window.location.href.indexOf("id") > -1) {
     let urlid = getUrlVars()["id"];
     shownElement = select("#" + urlid);
@@ -104,50 +111,92 @@ function draw() {
   textSize(14);
   text(String(mx) + ", " + String(my), 1120, 790);
   
-  // Animate Vertices
-  if (isHover == true) {
-    document.getElementById("canvasContainer").style.cursor = "default";
-    isHover = false;
-  }
-  canvas.removeAttribute("title");
-  for (let i = 0; i < vlist.length; i++) {
-    if (vlist[i].animate(mx, my)) {
-      isHover = true;
-      document.getElementById("canvasContainer").style.cursor = "pointer";
-      canvas.attribute("title", vlist[i].name);
+  // Display state for regular graph
+  if (!isCountDisplay) {
+    // Animate Vertices
+    if (isHover == true) {
+      document.getElementById("canvasContainer").style.cursor = "default";
+      isHover = false;
     }
-  }
-  
-  // Animate and Show Regions
-  for (let i = 0; i < rlist.length; i++) {
-    rlist[i].showHighlight();
-  }
-  for (let i = 0; i < rlist.length; i++) {
-    if (rlist[i].animate(mx, my)) {
-      isHover = true;
-      document.getElementById("canvasContainer").style.cursor = "pointer";
+    canvas.removeAttribute("title");
+    for (let i = 0; i < vlist.length; i++) {
+      if (vlist[i].animate(mx, my)) {
+        isHover = true;
+        document.getElementById("canvasContainer").style.cursor = "pointer";
+        canvas.attribute("title", vlist[i].name);
+      }
     }
-    rlist[i].show();
-  }
-  
-  if (isHover) {
-    // Change mouse position to not activate edges
-    mx -= 2*width;
-    my -= 2*height;
-  }
-  
-  // Animate & Show Edges
-  for (let i = 0; i < elist.length; i++) {
-    if (elist[i].animate(mx, my)) {
+    
+    // Animate and Show Regions
+    for (let i = 0; i < rlist.length; i++) {
+      rlist[i].showHighlight();
+    }
+    for (let i = 0; i < rlist.length; i++) {
+      if (rlist[i].animate(mx, my)) {
+        isHover = true;
+        document.getElementById("canvasContainer").style.cursor = "pointer";
+      }
+      rlist[i].show();
+    }
+    if (countRegion.animate(mx, my)) {
       isHover = true;
       document.getElementById("canvasContainer").style.cursor = "pointer";
     }
-    elist[i].show();
-  }
-  
-  // Show Vertices
-  for (let i = 0; i < vlist.length; i++) {
-    vlist[i].show();
+    countRegion.show();
+    
+    if (isHover) {
+      // Change mouse position to not activate edges
+      mx -= 2*width;
+      my -= 2*height;
+    }
+    
+    // Animate & Show Edges
+    for (let i = 0; i < elist.length; i++) {
+      if (elist[i].animate(mx, my)) {
+        isHover = true;
+        document.getElementById("canvasContainer").style.cursor = "pointer";
+      }
+      elist[i].show();
+    }
+    
+    // Show Vertices
+    for (let i = 0; i < vlist.length; i++) {
+      vlist[i].show();
+    }
+  } else { // Display state for countable graph zoomed in
+    // Animate Vertices
+    if (isHover == true) {
+      document.getElementById("canvasContainer").style.cursor = "default";
+      isHover = false;
+    }
+    canvas.removeAttribute("title");
+    for (let i = 0; i < vlistcount.length; i++) {
+      if (vlistcount[i].animate(mx, my)) {
+        isHover = true;
+        document.getElementById("canvasContainer").style.cursor = "pointer";
+        canvas.attribute("title", vlistcount[i].name);
+      }
+    }
+    
+    if (isHover) {
+      // Change mouse position to not activate edges
+      mx -= 2*width;
+      my -= 2*height;
+    }
+    
+    // Animate & Show Edges
+    for (let i = 0; i < elistcount.length; i++) {
+      if (elistcount[i].animate(mx, my)) {
+        isHover = true;
+        document.getElementById("canvasContainer").style.cursor = "pointer";
+      }
+      elistcount[i].show();
+    }
+    
+    // Show Vertices
+    for (let i = 0; i < vlistcount.length; i++) {
+      vlistcount[i].show();
+    }
   }
 }
 
@@ -155,37 +204,49 @@ function mouseClicked() {
   let mx = mouseX;
   let my = mouseY;
   let isClicked;
-  for (let i = 0; i < vlist.length; i++) {
-    isClicked = vlist[i].click(mx, my, shownElement);
-    if (isClicked !== false) {
-      shownElement = isClicked;
-      isClicked = true;
-      break;
-    }
-  }
-  if (!isClicked) {
-    for (let i = 0; i < elist.length; i++) {
-      isClicked = elist[i].click(mx, my, shownElement);
-      if (isClicked !== false) {
-        shownElement = isClicked;
-        isClicked = true;
-        break;
-      }
-    }
-  }
-  if (!isClicked) {
-    for (let i = 0; i < rlist.length; i++) {
-      isClicked = rlist[i].click(mx, my, shownElement);
-      if (isClicked !== false) {
-        shownElement = isClicked;
-        isClicked = true;
-        break;
-      }
-    }
-  }
   
-  if (isClicked) {
-    updateURL(shownElement.id());
+  if (!isCountDisplay) {
+    for (let i = 0; i < vlist.length; i++) {
+      isClicked = vlist[i].click(mx, my, shownElement);
+      if (isClicked !== false) {
+        shownElement = isClicked;
+        isClicked = true;
+        break;
+      }
+    }
+    if (!isClicked) {
+      for (let i = 0; i < elist.length; i++) {
+        isClicked = elist[i].click(mx, my, shownElement);
+        if (isClicked !== false) {
+          shownElement = isClicked;
+          isClicked = true;
+          break;
+        }
+      }
+    }
+    if (!isClicked) {
+      for (let i = 0; i < rlist.length; i++) {
+        isClicked = rlist[i].click(mx, my, shownElement);
+        if (isClicked !== false) {
+          shownElement = isClicked;
+          isClicked = true;
+          break;
+        }
+      }
+    }
+    
+    if (isClicked) {
+      updateURL(shownElement.id());
+    }
+    
+    if (!isClicked) {
+      let result = countRegion.click(mx, my, shownElement);
+      if (result !== false) {
+        shownElement = undefined;
+        isCountDisplay = true;
+        updateURL();
+      }
+    }
   }
 }
 
@@ -213,7 +274,12 @@ function getUrlVars() {
 
 function updateURL(id) {
   if (history.pushState) {
-    var newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?id=' + id;
-    window.history.pushState({path:newurl},'',newurl);
+    if (id) {
+      var newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?id=' + id;
+      window.history.pushState({path:newurl},'',newurl);
+    } else {
+      var newurl = window.location.protocol + "//" + window.location.host + window.location.pathname
+      window.history.pushState({path:newurl},'',newurl);
+    }
   }
 }
