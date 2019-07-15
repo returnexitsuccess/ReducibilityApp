@@ -70,43 +70,50 @@ let data = {
       "upperlabel": "Iso ergodic diff",
       "lowerlabel": "Iso countable graphs",
       "edgetype": "solid",
-      "id": "edge1"
+      "id": "ergdiff-countgraphs",
+      "countable": false
     },
     {
       "upperlabel": "Iso ergodic meas preserving",
       "lowerlabel": "Iso countable graphs",
       "edgetype": "arrow",
-      "id": "edge2"
+      "id": "ergmeas-countgraphs",
+      "countable": false
     },
     {
       "upperlabel": "Iso ergodic meas preserving",
       "lowerlabel": "Iso ergodic diff",
       "edgetype": "solid",
-      "id": "edge3"
+      "id": "ergmeas-ergdiff",
+      "countable": false
     },
     {
       "upperlabel": "Iso ergodic meas preserving",
       "lowerlabel": "Unitary conj normal ops",
       "edgetype": "arrow",
-      "id": "edge4"
+      "id": "ergmeas-unitaryconj",
+      "countable": false
     },
     {
       "upperlabel": "Max unitary action",
       "lowerlabel": "Iso ergodic meas preserving",
       "edgetype": "solid",
-      "id": "edge5"
+      "id": "maxuniaction-ergmeas",
+      "countable": false
     },
     {
       "upperlabel": "Max unitary action",
       "lowerlabel": "Max l1 action",
       "edgetype": "arrow",
-      "id": "edge6"
+      "id": "maxuniaction-maxl1action",
+      "countable": false
     },
     {
       "upperlabel": "Max l1 action",
       "lowerlabel": "Ab Polish actions",
       "edgetype": "solid",
-      "id": "edge7"
+      "id": "maxl1action-abpolishactions",
+      "countable": false
     }
   ]
 }

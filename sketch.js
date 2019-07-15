@@ -4,6 +4,8 @@ let shownElement;
 let rlist = [];
 let isHover;
 let vdict = {};
+let edict = {};
+let goBackRegion;
 
 let vlistcount = [];
 let elistcount = [];
@@ -24,6 +26,10 @@ function preload() {
   for (let i = 0; i < data.equiv.length; i++) {
     item = data.equiv[i];
     vdict[item.id] = loadStrings("equiv/" + item.id + ".html");
+  }
+  for (let i = 0; i < data.reduc.length; i++) {
+    item = data.reduc[i];
+    edict[item.id] = loadStrings("reduc/" + item.id + ".html");
   }
 }
 
@@ -56,7 +62,20 @@ function setup() {
   
   for (let i = 0; i < data.reduc.length; i++) {
     item = data.reduc[i];
-    element = select("#" + item.id);
+    element = createDiv();
+    element.id(item.id);
+    element.style("display", "none");
+    element.parent(body);
+    
+    if (item.id in edict) {
+      let result = edict[item.id];
+      let start = result.indexOf("<body>") + 1;
+      let end = result.indexOf("</body>");
+      let reducbody = result.slice(start, end).join('\n');
+      element.html(reducbody);
+    }
+    
+    
     let upper;
     let lower;
     for (let j = 0; j < vlist.length; j++) {
@@ -68,7 +87,11 @@ function setup() {
       }
     }
     if (upper != null && lower != null) {
-      elist.push(new Edge(upper[0], upper[1], lower[0], lower[1], item.edgetype, element));
+      if (item.countable) {
+        elistcount.push(new Edge(upper[0], upper[1], lower[0], lower[1], item.edgetype, element));
+      } else {
+        elist.push(new Edge(upper[0], upper[1], lower[0], lower[1], item.edgetype, element));
+      }
     } else {
       console.log(item);
       console.error("Couldn't find upper and lower vertex");
@@ -90,9 +113,13 @@ function setup() {
     return (x-1050)*(x-1050) / 1500 + 200;
   }, 50, 1250, "polish", element, color(0, 200, 0)));
   
-  countRegion = new Region(100, 700, 150, 750, "Countable", x => {
-    return (x-600)*(x-600) / 1500 + 600;
-  }, 100, 200, "countable", null, color(0, 200, 200));
+  countRegion = new Region(300, 720, 350, 750, "Countable", x => {
+    return (x-350)*(x-350) / 500 + 690;
+  }, 100, 600, "countable", null, color(0, 200, 200));
+  
+  goBackRegion = new Region(1000, 50, 1100, 100, "Go Back", x => {
+    return (x-600)*(x-600) / 4000 + 50;
+  }, -50, 1250, "goback", null, color(0, 200, 200));
   
   if (window.location.href.indexOf("id") > -1) {
     let urlid = getUrlVars()["id"];
@@ -178,6 +205,13 @@ function draw() {
       }
     }
     
+    //Animate and show Go Back region
+    if (goBackRegion.animate(mx, my)) {
+      isHover = true;
+      document.getElementById("canvasContainer").style.cursor = "pointer";
+    }
+    goBackRegion.show();
+    
     if (isHover) {
       // Change mouse position to not activate edges
       mx -= 2*width;
@@ -244,6 +278,38 @@ function mouseClicked() {
       if (result !== false) {
         shownElement = undefined;
         isCountDisplay = true;
+        updateURL();
+      }
+    }
+  } else {
+    for (let i = 0; i < vlistcount.length; i++) {
+      isClicked = vlistcount[i].click(mx, my, shownElement);
+      if (isClicked !== false) {
+        shownElement = isClicked;
+        isClicked = true;
+        break;
+      }
+    }
+    if (!isClicked) {
+      for (let i = 0; i < elistcount.length; i++) {
+        isClicked = elistcount[i].click(mx, my, shownElement);
+        if (isClicked !== false) {
+          shownElement = isClicked;
+          isClicked = true;
+          break;
+        }
+      }
+    }
+    
+    if (isClicked) {
+      updateURL(shownElement.id());
+    }
+    
+    if (!isClicked) {
+      let result = goBackRegion.click(mx, my, shownElement);
+      if (result !== false) {
+        shownElement = undefined;
+        isCountDisplay = false;
         updateURL();
       }
     }
