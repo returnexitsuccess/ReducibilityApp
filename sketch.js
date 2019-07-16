@@ -40,11 +40,13 @@ function setup() {
   let body = select("#body");
   for (let i = 0; i < data.equiv.length; i++) {
     item = data.equiv[i];
+    // Create html element
     element = createDiv();
     element.id(item.id);
     element.style("display", "none");
     element.parent(body);
     
+    // Add html from file
     if (item.id in vdict) {
       let result = vdict[item.id];
       let start = result.indexOf("<body>") + 1;
@@ -53,6 +55,7 @@ function setup() {
       element.html(equivbody);
     }
     
+    // Add either to regular or countable graph
     if (item.categories.indexOf("countable") >= 0) {
       vlistcount.push(new Vertex(item.pos[0], item.pos[1], item.name, item.label, item.labeloffset, item.categories, element));
     } else {
@@ -62,11 +65,13 @@ function setup() {
   
   for (let i = 0; i < data.reduc.length; i++) {
     item = data.reduc[i];
+    // Create html element
     element = createDiv();
     element.id(item.id);
     element.style("display", "none");
     element.parent(body);
     
+    // Import html from file
     if (item.id in edict) {
       let result = edict[item.id];
       let start = result.indexOf("<body>") + 1;
@@ -75,26 +80,49 @@ function setup() {
       element.html(reducbody);
     }
     
-    
+    // Determine the upper and lower vertices of edge
     let upper;
     let lower;
-    for (let j = 0; j < vlist.length; j++) {
-      if (upper == null && vlist[j].label == item.upperlabel) {
-        upper = [vlist[j].x, vlist[j].y];
+    let upperindex;
+    let lowerindex;
+    if (!item.countable) {
+      for (let j = 0; j < vlist.length; j++) {
+        if (upper == null && vlist[j].label == item.upperlabel) {
+          upper = [vlist[j].x, vlist[j].y];
+          upperindex = j;
+        }
+        if (lower == null && vlist[j].label == item.lowerlabel) {
+          lower = [vlist[j].x, vlist[j].y];
+          lowerindex = j;
+        }
       }
-      if (lower == null && vlist[j].label == item.lowerlabel) {
-        lower = [vlist[j].x, vlist[j].y];
-      }
-    }
-    if (upper != null && lower != null) {
-      if (item.countable) {
-        elistcount.push(new Edge(upper[0], upper[1], lower[0], lower[1], item.edgetype, element));
-      } else {
+      // Add to graph
+      if (upper != null && lower != null) {
         elist.push(new Edge(upper[0], upper[1], lower[0], lower[1], item.edgetype, element));
+        addHTMLReducs(upperindex, lowerindex, vlist, item.id);
+      } else {
+        console.log(item);
+        console.error("Couldn't find upper and lower vertex");
       }
     } else {
-      console.log(item);
-      console.error("Couldn't find upper and lower vertex");
+      for (let j = 0; j < vlistcount.length; j++) {
+        if (upper == null && vlistcount[j].label == item.upperlabel) {
+          upper = [vlistcount[j].x, vlistcount[j].y];
+          upperindex = j;
+        }
+        if (lower == null && vlistcount[j].label == item.lowerlabel) {
+          lower = [vlistcount[j].x, vlistcount[j].y];
+          lowerindex = j;
+        }
+      }
+      // Add to graph
+      if (upper != null && lower != null) {
+        elistcount.push(new Edge(upper[0], upper[1], lower[0], lower[1], item.edgetype, element));
+        addHTMLReducs(upperindex, lowerindex, vlistcount, item.id);
+      } else {
+        console.log(item);
+        console.error("Couldn't find upper and lower vertex");
+      }
     }
   }
   
@@ -348,4 +376,18 @@ function updateURL(id) {
       window.history.pushState({path:newurl},'',newurl);
     }
   }
+}
+
+function addHTMLReducs(up, lo, vertices, id) {
+  let eltstring = vertices[lo].element.html();
+  let i = eltstring.indexOf("</h2>", eltstring.indexOf('id="reducible-to"')) + 5;
+  let linkstr = '<p><a href="/?id=' + id + '">' + vertices[up].name + '</a></p>\n';
+  let result = [eltstring.slice(0, i), linkstr, eltstring.slice(i)].join('');
+  vertices[lo].element.html(result);
+  
+  eltstring = vertices[up].element.html();
+  i = eltstring.indexOf("</h2>", eltstring.indexOf('id="reducible-from"')) + 5;
+  linkstr = '<p><a href="/?id=' + id + '">' + vertices[lo].name + '</a></p>\n';
+  result = [eltstring.slice(0, i), linkstr, eltstring.slice(i)].join('');
+  vertices[up].element.html(result);
 }
