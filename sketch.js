@@ -58,8 +58,16 @@ function setup() {
     // Add either to regular or countable graph
     if (item.categories.indexOf("countable") >= 0) {
       vlistcount.push(new Vertex(item.pos[0], item.pos[1], item.name, item.label, item.labeloffset, item.categories, element));
+      for (let i = 0; i < item.categories.length; i++) {
+        cat = item.categories[i];
+        addHTMLCats(element, cat);
+      }
     } else {
       vlist.push(new Vertex(item.pos[0], item.pos[1], item.name, item.label, item.labeloffset, item.categories, element));
+      for (let i = 0; i < item.categories.length; i++) {
+        cat = item.categories[i];
+        addHTMLCats(element, cat);
+      }
     }
   }
   
@@ -390,4 +398,20 @@ function addHTMLReducs(up, lo, vertices, id) {
   linkstr = '<p><a href="/?id=' + id + '">' + vertices[lo].name + '</a></p>\n';
   result = [eltstring.slice(0, i), linkstr, eltstring.slice(i)].join('');
   vertices[up].element.html(result);
+}
+
+function addHTMLCats(element, cat) {
+  let innerstr = element.html();
+  let linkstr;
+  if (cat == "sinf") {
+    linkstr = '<p><a href="/?id=' + cat + '">' + "S Infinity" + '</a></p>';
+  } else if (cat == "borel") {
+    linkstr = '<p><a href="/?id=' + cat + '">' + "Borel" + '</a></p>';
+  } else if (cat == "polish") {
+    linkstr = '<p><a href="/?id=' + cat + '">' + "Polish group actions" + '</a></p>';
+  } else {
+    return;
+  }
+  
+  element.html(innerstr + linkstr);
 }
