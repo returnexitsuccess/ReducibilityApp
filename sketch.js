@@ -13,14 +13,13 @@ let countRegion;
 let isCountDisplay = false;
 
 // TODO
+// Use python script to generate json data (?)
 // Use p elements for displaying text
-// Create countable subregion (expandable)
-// Generate partial pages
+// Fill in elements for countable vertices and edges
+// Create placeholder tex files for each vertex
 // Auto scroll down to page on click
 // Fill in more equivalence relations
 // CSS the template for pages
-// Create Github project
-// Create pull request guide
 
 function preload() {
   for (let i = 0; i < data.equiv.length; i++) {
