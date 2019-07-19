@@ -3,7 +3,7 @@ const session = require('express-session');
 const uuidv4 = require('uuid/v4');
 const formidable = require('formidable');
 const fs = require('fs-extra');
-const rimraf = require('rimraf');
+const { spawn } = require('child_process');
 const bodyParser = require('body-parser');
 const FileStore = require('session-file-store')(session);
 const router = express.Router();
@@ -45,32 +45,76 @@ app.use(session({
 
 app.use(bodyParser.json());      
 app.use(bodyParser.urlencoded({extended: true}));
- 
-app.use(express.static(__dirname + '/site'));
 
+// Setup session variables
+app.use((req, res, next) => {
+  if (!req.session) {
+    req.session.submitted = false;
+    req.session.preview = true;
+  }
+  next();
+});
+
+// Display regularly by default
+app.use('/', express.static(__dirname + '/site'));
+
+// Submitting file
 app.post('/submit', function (req, res) {
   var form = new formidable.IncomingForm();
   form.parse(req, function (err, fields, files) {
     var oldpath = files.uploadedfile.path;
-    var newpath = __dirname + '/previews/' + req.sessionID + '/' + files.uploadedfile.name;
-    ensureExists(__dirname + '/previews/' + req.sessionID, 0777, err => {
+    var newpath = __dirname + '/previews/' + req.sessionID + '/equivtex/' + files.uploadedfile.name;
+    ensureExists(__dirname + '/previews/' + req.sessionID, 0777, function (err) {
       if (err) throw err;
-    });
-    fs.copyFile(oldpath, newpath, function (err) {
-      if (err) throw err;
-      fs.unlink(oldpath, function (err) {
+      fs.copy(__dirname + '/site', __dirname + '/previews/' + req.sessionID, function (err) {
         if (err) throw err;
-      });
-      res.write('File successfully uploaded');
+        fs.copyFile(__dirname + '/preview.css', __dirname + '/previews/' + req.sessionID + '/index.css', function (err) {
+          if (err) throw err;
+          fs.copyFile(oldpath, newpath, function (err) {
+            if (err) throw err;
+            fs.unlink(oldpath, function (err) {
+              if (err) throw err;
+            });
+            req.session.submitted = true;
+            res.redirect('preview');
+            res.end();
+          });
+        });
+      }.bind({oldpath: oldpath, newpath: newpath}));
+    }.bind({oldpath: oldpath, newpath: newpath, req: req}));
+  });
+});
+
+// Previewing changes to site
+app.use('/preview', (req, res, next) => {
+  if (req.session.submitted == true && req.session.preview == true) {
+    return express.static(__dirname + '/previews/' + req.sessionID)(req, res, next);
+  } else if (req.session.submitted == true && req.session.preview == false) {
+    var basepath = 'previews/' + req.sessionID;
+    const child = spawn('python', ['convert.py', basepath + '/equivtex/', basepath + '/equiv/']);
+    child.stderr.setEncoding('utf8');
+    child.stderr.on('data', result => {
+      //console.log('stderr:' + result)
+    });
+    child.on('exit', code => {
+      //console.log(`Exited with ${code}`);
+      req.session.preview = true;
+      res.sendFile(__dirname + '/' + basepath + '/index.html');
       res.end();
     });
-  });
+    next();
+  } else {
+    res.redirect('/');
+    next();
+  }
 });
  
 // Listen
 app.listen(process.env.PORT || 8080, () => {
     console.log(`App Started on PORT ${process.env.PORT || 8080}`);
 });
+
+// Helper functions
 
 function ensureExists(path, mask, cb) {
     if (typeof mask == 'function') { // allow the `mask` parameter to be optional

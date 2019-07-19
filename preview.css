@@ -12,7 +12,3 @@ header h1 {
     margin-right: calc((100% - 1200px) / 2);
   }
 }
-
-div#preview {
-  display: none;
-}
