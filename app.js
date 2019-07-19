@@ -10,7 +10,7 @@ const router = express.Router();
 const app = express();
 
 const schedule = require('node-schedule');
-var job = schedule.scheduleJob('0 */1 * * *', () => {
+var job = schedule.scheduleJob('*/10 * * * *', () => {
   getDirs(__dirname + '/previews', dirs => {
     console.log(dirs);
     for (let i = 0; i < dirs.length; i++) {
@@ -48,15 +48,46 @@ app.use(bodyParser.urlencoded({extended: true}));
 
 // Setup session variables
 app.use((req, res, next) => {
-  if (!req.session) {
+  if (req.session === undefined || req.session.submitted === undefined) {
     req.session.submitted = false;
-    req.session.preview = true;
+    req.session.preview = false;
   }
   next();
 });
 
+// Previewing changes to site
+app.use('/preview', (req, res, next) => {
+  if (req.session.submitted == true && req.session.preview == true) {
+    return express.static(__dirname + '/previews/' + req.sessionID)(req, res, next);
+  } else if (req.session.submitted == true && req.session.preview == false) {
+    var basepath = 'previews/' + req.sessionID;
+    const child = spawn('python', ['convert.py', basepath + '/equivtex/', basepath + '/equiv/']);
+    child.stderr.setEncoding('utf8');
+    child.stderr.on('data', result => {
+      console.log('stderr:' + result)
+    });
+    child.on('exit', code => {
+      console.log(`Exited with ${code}`);
+      req.session.preview = true;
+      res.redirect('/preview');
+      
+      next();
+    });
+  } else {
+    res.redirect('/');
+    next();
+  }
+});
+
 // Display regularly by default
-app.use('/', express.static(__dirname + '/site'));
+app.use('/', (req, res, next) => {
+  if (req.path.slice(0, 8) !== '/preview') {
+    console.log(req.path);
+    return express.static(__dirname + '/site')(req, res, next);
+  } else {
+    next();
+  }
+});
 
 // Submitting file
 app.post('/submit', function (req, res) {
@@ -76,6 +107,7 @@ app.post('/submit', function (req, res) {
               if (err) throw err;
             });
             req.session.submitted = true;
+            req.session.preview = false;
             res.redirect('preview');
             res.end();
           });
@@ -85,29 +117,7 @@ app.post('/submit', function (req, res) {
   });
 });
 
-// Previewing changes to site
-app.use('/preview', (req, res, next) => {
-  if (req.session.submitted == true && req.session.preview == true) {
-    return express.static(__dirname + '/previews/' + req.sessionID)(req, res, next);
-  } else if (req.session.submitted == true && req.session.preview == false) {
-    var basepath = 'previews/' + req.sessionID;
-    const child = spawn('python', ['convert.py', basepath + '/equivtex/', basepath + '/equiv/']);
-    child.stderr.setEncoding('utf8');
-    child.stderr.on('data', result => {
-      //console.log('stderr:' + result)
-    });
-    child.on('exit', code => {
-      //console.log(`Exited with ${code}`);
-      req.session.preview = true;
-      res.sendFile(__dirname + '/' + basepath + '/index.html');
-      res.end();
-    });
-    next();
-  } else {
-    res.redirect('/');
-    next();
-  }
-});
+
  
 // Listen
 app.listen(process.env.PORT || 8080, () => {

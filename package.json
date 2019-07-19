@@ -4,7 +4,8 @@
   "description": "Website displaying reducibility between equivalence relations",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "gulp && node app.js"
   },
   "repository": {
     "type": "git",
@@ -26,6 +27,12 @@
     "formidable": "^1.2.1",
     "fs": "0.0.1-security",
     "fs-extra": "^8.1.0",
+    "gulp": "^4.0.2",
+    "gulp-cli": "^2.2.0",
+    "gulp-concat": "^2.6.1",
+    "gulp-rename": "^1.4.0",
+    "gulp-terser": "^1.2.0",
+    "gulp-uglify": "^3.0.2",
     "http": "0.0.0",
     "node-schedule": "^1.3.2",
     "node-scheduler": "^1.0.0",
