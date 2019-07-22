@@ -388,13 +388,13 @@ function updateURL(id) {
 function addHTMLReducs(up, lo, vertices, id) {
   let eltstring = vertices[lo].element.html();
   let i = eltstring.indexOf("</h2>", eltstring.indexOf('id="reducible-to"')) + 5;
-  let linkstr = '<p><a href="/?id=' + id + '">' + vertices[up].name + '</a></p>\n';
+  let linkstr = '<p><a href="./?id=' + id + '">' + vertices[up].name + '</a></p>\n';
   let result = [eltstring.slice(0, i), linkstr, eltstring.slice(i)].join('');
   vertices[lo].element.html(result);
   
   eltstring = vertices[up].element.html();
   i = eltstring.indexOf("</h2>", eltstring.indexOf('id="reducible-from"')) + 5;
-  linkstr = '<p><a href="/?id=' + id + '">' + vertices[lo].name + '</a></p>\n';
+  linkstr = '<p><a href="./?id=' + id + '">' + vertices[lo].name + '</a></p>\n';
   result = [eltstring.slice(0, i), linkstr, eltstring.slice(i)].join('');
   vertices[up].element.html(result);
 }
@@ -403,11 +403,11 @@ function addHTMLCats(element, cat) {
   let innerstr = element.html();
   let linkstr;
   if (cat == "sinf") {
-    linkstr = '<p><a href="/?id=' + cat + '">' + "S Infinity" + '</a></p>';
+    linkstr = '<p><a href="./?id=' + cat + '">' + "S Infinity" + '</a></p>';
   } else if (cat == "borel") {
-    linkstr = '<p><a href="/?id=' + cat + '">' + "Borel" + '</a></p>';
+    linkstr = '<p><a href="./?id=' + cat + '">' + "Borel" + '</a></p>';
   } else if (cat == "polish") {
-    linkstr = '<p><a href="/?id=' + cat + '">' + "Polish group actions" + '</a></p>';
+    linkstr = '<p><a href="./?id=' + cat + '">' + "Polish group actions" + '</a></p>';
   } else {
     return;
   }

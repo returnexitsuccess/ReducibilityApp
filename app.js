@@ -4,6 +4,7 @@ const uuidv4 = require('uuid/v4');
 const formidable = require('formidable');
 const fs = require('fs-extra');
 const { spawn } = require('child_process');
+const editJsonFile = require('edit-json-file');
 const bodyParser = require('body-parser');
 const FileStore = require('session-file-store')(session);
 const router = express.Router();
@@ -64,14 +65,27 @@ app.use('/preview', (req, res, next) => {
     const child = spawn('python', ['convert.py', basepath + '/equivtex/', basepath + '/equiv/']);
     child.stderr.setEncoding('utf8');
     child.stderr.on('data', result => {
-      console.log('stderr:' + result)
+      //console.log('stderr:' + result)
     });
     child.on('exit', code => {
-      console.log(`Exited with ${code}`);
-      req.session.preview = true;
-      res.redirect('/preview');
-      
-      next();
+      //console.log(`Exited with ${code}`);
+      obj = createDataObject(req.session.fields, req.session.filename);
+      fs.readFile(__dirname + '/previews/' + req.sessionID + '/data.json', (err, data) => {
+        if (err) throw err;
+        jsonstr = data.slice(data.indexOf('=') + 1);
+        let json = JSON.parse(jsonstr);
+        json.equiv.push(obj);
+        fs.writeFile(__dirname + '/previews/' + req.sessionID + '/data.json', "data = " + JSON.stringify(json), (err) => {
+          if (err) throw err;
+          req.session.preview = true;
+          while (req.session.submitted !== true || req.session.preview !== true) {
+            setTimeout(() => {}, 100);
+          }
+          res.redirect('/preview');
+          
+          next();
+        });
+      });
     });
   } else {
     res.redirect('/');
@@ -82,7 +96,7 @@ app.use('/preview', (req, res, next) => {
 // Display regularly by default
 app.use('/', (req, res, next) => {
   if (req.path.slice(0, 8) !== '/preview') {
-    console.log(req.path);
+    //console.log(req.path);
     return express.static(__dirname + '/site')(req, res, next);
   } else {
     next();
@@ -93,27 +107,45 @@ app.use('/', (req, res, next) => {
 app.post('/submit', function (req, res) {
   var form = new formidable.IncomingForm();
   form.parse(req, function (err, fields, files) {
-    var oldpath = files.uploadedfile.path;
-    var newpath = __dirname + '/previews/' + req.sessionID + '/equivtex/' + files.uploadedfile.name;
-    ensureExists(__dirname + '/previews/' + req.sessionID, 0777, function (err) {
+    fs.readFile(__dirname + '/site/data.json', (err, result) => {
       if (err) throw err;
-      fs.copy(__dirname + '/site', __dirname + '/previews/' + req.sessionID, function (err) {
+      jsonstr = result.slice(result.indexOf('=') + 1);
+      let data = JSON.parse(jsonstr);
+      let newid = files.uploadedfile.name.slice(0, files.uploadedfile.name.indexOf('.'));
+      for (let i = 0; i < data.equiv.length; i++) {
+        if (data.equiv[i].id === newid) {
+          alert(`The file ${files.uploadedfile.name} already exists`);
+          res.redirect('submit');
+          res.end();
+        }
+      }
+      var oldpath = files.uploadedfile.path;
+      var newpath = __dirname + '/previews/' + req.sessionID + '/equivtex/' + files.uploadedfile.name;
+      ensureExists(__dirname + '/previews/' + req.sessionID, 0777, function (err) {
         if (err) throw err;
-        fs.copyFile(__dirname + '/preview.css', __dirname + '/previews/' + req.sessionID + '/index.css', function (err) {
+        fs.copy(__dirname + '/site', __dirname + '/previews/' + req.sessionID, function (err) {
           if (err) throw err;
-          fs.copyFile(oldpath, newpath, function (err) {
+          fs.copyFile(__dirname + '/preview.css', __dirname + '/previews/' + req.sessionID + '/index.css', function (err) {
             if (err) throw err;
-            fs.unlink(oldpath, function (err) {
+            fs.copyFile(oldpath, newpath, function (err) {
               if (err) throw err;
+              fs.unlink(oldpath, function (err) {
+                if (err) throw err;
+              });
+              req.session.filename = files.uploadedfile.name;
+              req.session.fields = fields;
+              req.session.submitted = true;
+              req.session.preview = false;
+              while (req.session.submitted !== true || req.session.preview !== false) {
+                setTimeout(() => {}, 100);
+              }
+              res.redirect('preview');
+              res.end();
             });
-            req.session.submitted = true;
-            req.session.preview = false;
-            res.redirect('preview');
-            res.end();
           });
-        });
+        }.bind({oldpath: oldpath, newpath: newpath}));
       }.bind({oldpath: oldpath, newpath: newpath}));
-    }.bind({oldpath: oldpath, newpath: newpath, req: req}));
+    });
   });
 });
 
@@ -157,4 +189,27 @@ function getDirs(rootDir, cb) {
             }
         }
     });
+}
+
+function createDataObject(fields, name) {
+  obj = {};
+  obj.name = fields.name;
+  obj.label = fields.label;
+  obj.labeloffset = [0,0];
+  obj.pos = [parseInt(fields.x), parseInt(fields.y)];
+  obj.id = name.slice(0, name.indexOf('.'));
+  obj.categories = [];
+  if (fields.sinf === 'sinf') {
+    obj.categories.push('sinf');
+  }
+  if (fields.borel === 'borel') {
+    obj.categories.push('borel');
+  }
+  if (fields.polish === 'polish') {
+    obj.categories.push('polish');
+  }
+  if (fields.countable === 'countable') {
+    obj.categories.push('countable');
+  }
+  return obj;
 }
