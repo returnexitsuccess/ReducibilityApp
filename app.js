@@ -4,30 +4,49 @@ const uuidv4 = require('uuid/v4');
 const formidable = require('formidable');
 const fs = require('fs-extra');
 const { spawn } = require('child_process');
-const editJsonFile = require('edit-json-file');
 const bodyParser = require('body-parser');
 const FileStore = require('session-file-store')(session);
 const router = express.Router();
 const app = express();
 
+const winston = require('winston');
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.json(),
+  defaultMeta: { service: 'user-service' },
+  transports: [
+    //
+    // - Write to all logs with level `info` and below to `combined.log` 
+    // - Write all logs error (and below) to `error.log`.
+    //
+    new winston.transports.File({ filename: 'error.log', level: 'error', timestamp: true }),
+    new winston.transports.File({ filename: 'combined.log', timestamp: true })
+  ]
+});
+if (process.env.NODE_ENV !== 'production') {
+  logger.add(new winston.transports.Console({
+    format: winston.format.simple()
+  }));
+}
+
 const schedule = require('node-schedule');
 var job = schedule.scheduleJob('*/10 * * * *', () => {
   getDirs(__dirname + '/previews', dirs => {
-    console.log(dirs);
+    logger.info(dirs);
     for (let i = 0; i < dirs.length; i++) {
       fs.stat(__dirname + '/sessions/' + dirs[i] + '.json', function (err, stat) {
         if (err == null) {
           // file exists
-          console.log("file exists");
+          logger.info("file exists");
         } else if (err.code === 'ENOENT') {
           // file does not exist
-          console.log("file does not exist");
+          logger.info("file does not exist");
           //console.log(__dirname + '/previews/' + dirs[i]);
           fs.remove(__dirname + '/previews/' + dirs[i], err => {
-            if (err) throw err;
+            if (err) logger.error(err);
           });
         } else {
-          throw err;
+          logger.error(err);
         }
       }.bind({dirs: dirs, i: i}));
     }
@@ -71,12 +90,12 @@ app.use('/preview', (req, res, next) => {
       //console.log(`Exited with ${code}`);
       obj = createDataObject(req.session.fields, req.session.filename);
       fs.readFile(__dirname + '/previews/' + req.sessionID + '/data.json', (err, data) => {
-        if (err) throw err;
+        if (err) logger.error(err);
         jsonstr = data.slice(data.indexOf('=') + 1);
         let json = JSON.parse(jsonstr);
         json.equiv.push(obj);
         fs.writeFile(__dirname + '/previews/' + req.sessionID + '/data.json', "data = " + JSON.stringify(json), (err) => {
-          if (err) throw err;
+          if (err) logger.error(err);
           req.session.preview = true;
           while (req.session.submitted !== true || req.session.preview !== true) {
             setTimeout(() => {}, 100);
@@ -108,7 +127,7 @@ app.post('/submit', function (req, res) {
   var form = new formidable.IncomingForm();
   form.parse(req, function (err, fields, files) {
     fs.readFile(__dirname + '/site/data.json', (err, result) => {
-      if (err) throw err;
+      if (err) logger.error(err);
       jsonstr = result.slice(result.indexOf('=') + 1);
       let data = JSON.parse(jsonstr);
       let newid = files.uploadedfile.name.slice(0, files.uploadedfile.name.indexOf('.'));
@@ -122,15 +141,15 @@ app.post('/submit', function (req, res) {
       var oldpath = files.uploadedfile.path;
       var newpath = __dirname + '/previews/' + req.sessionID + '/equivtex/' + files.uploadedfile.name;
       ensureExists(__dirname + '/previews/' + req.sessionID, 0777, function (err) {
-        if (err) throw err;
+        if (err) logger.error(err);
         fs.copy(__dirname + '/site', __dirname + '/previews/' + req.sessionID, function (err) {
-          if (err) throw err;
+          if (err) logger.error(err);
           fs.copyFile(__dirname + '/preview.css', __dirname + '/previews/' + req.sessionID + '/index.css', function (err) {
-            if (err) throw err;
+            if (err) logger.error(err);
             fs.copyFile(oldpath, newpath, function (err) {
-              if (err) throw err;
+              if (err) logger.error(err);
               fs.unlink(oldpath, function (err) {
-                if (err) throw err;
+                if (err) logger.error(err);
               });
               req.session.filename = files.uploadedfile.name;
               req.session.fields = fields;
@@ -153,7 +172,7 @@ app.post('/submit', function (req, res) {
  
 // Listen
 app.listen(process.env.PORT || 8080, () => {
-    console.log(`App Started on PORT ${process.env.PORT || 8080}`);
+    logger.info(`App Started on PORT ${process.env.PORT || 8080}`);
 });
 
 // Helper functions
