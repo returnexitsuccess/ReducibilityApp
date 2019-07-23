@@ -32,19 +32,30 @@ if (process.env.NODE_ENV !== 'production') {
 const schedule = require('node-schedule');
 var job = schedule.scheduleJob('*/10 * * * *', () => {
   getDirs(__dirname + '/previews', dirs => {
-    logger.info(dirs);
     for (let i = 0; i < dirs.length; i++) {
+      logger.info(dirs[i]);
       fs.stat(__dirname + '/sessions/' + dirs[i] + '.json', function (err, stat) {
         if (err == null) {
           // file exists
-          logger.info("file exists");
+          logger.info("  file exists");
         } else if (err.code === 'ENOENT') {
           // file does not exist
-          logger.info("file does not exist");
-          //console.log(__dirname + '/previews/' + dirs[i]);
-          fs.remove(__dirname + '/previews/' + dirs[i], err => {
-            if (err) logger.error(err);
+          logger.info("  file does not exist");
+          fs.stat(__dirname + '/previews/' + dirs[i] + '/saved.txt', function (err, stat) {
+            if (err == null) {
+              // saved.txt exists
+              logger.info("    saved session");
+            } else if (err.code === 'ENOENT') {
+              // saved.txt does not exist
+              logger.info("    deleting session");
+              fs.remove(__dirname + '/previews/' + dirs[i], err => {
+                if (err) logger.error(err);
+              });
+            } else {
+              logger.error(err);
+            }
           });
+          
         } else {
           logger.error(err);
         }
@@ -158,8 +169,7 @@ app.post('/submit', function (req, res) {
               while (req.session.submitted !== true || req.session.preview !== false) {
                 setTimeout(() => {}, 100);
               }
-              res.redirect('preview');
-              res.end();
+              res.redirect('/preview');
             });
           });
         }.bind({oldpath: oldpath, newpath: newpath}));
@@ -168,7 +178,20 @@ app.post('/submit', function (req, res) {
   });
 });
 
-
+app.post('/approve', function (req, res) {
+  if (req.session.submitted == true && req.session.preview == true) {
+    fs.writeFile(__dirname + '/previews/' + req.sessionID + '/saved.txt', req.sessionID + '/n', (err) => {
+      if (err) logger.error(err);
+      fs.unlink(__dirname + '/sessions/' + req.sessionID + '.json', (err) => {
+        if (err) logger.error(err);
+        alert("Successfully submitted");
+        res.redirect('/');
+      });
+    });
+  } else {
+    res.redirect('/');
+  }
+});
  
 // Listen
 app.listen(process.env.PORT || 8080, () => {
