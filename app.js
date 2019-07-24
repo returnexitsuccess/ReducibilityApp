@@ -6,7 +6,13 @@ const fs = require('fs-extra');
 const { spawn } = require('child_process');
 const bodyParser = require('body-parser');
 const FileStore = require('session-file-store')(session);
-const router = express.Router();
+
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
+
+const config = require(__dirname + '/config.js');
+
+//const router = express.Router();
 const app = express();
 
 const winston = require('winston');
@@ -64,6 +70,29 @@ var job = schedule.scheduleJob('*/10 * * * *', () => {
   });
 });
 
+// Configure passport
+passport.use(new LocalStrategy(
+  function (username, password, cb) {
+    const user = config.users[0];
+    if (username === user.username && password === user.password) {
+      return cb(null, user);
+    } else {
+      return cb(null, false);
+    }
+  })
+);
+
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+
+passport.deserializeUser((id, cb) => {
+  cb(null, config.users[0]);
+});
+
+
+app.use(bodyParser.json());      
+app.use(bodyParser.urlencoded({extended: true}));
 app.use(session({
     secret: process.env.SESSION_SECRET || 'reductions',
     store: new FileStore(),
@@ -74,8 +103,8 @@ app.use(session({
     },
 }));
 
-app.use(bodyParser.json());      
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Setup session variables
 app.use((req, res, next) => {
@@ -92,7 +121,16 @@ app.use('/preview', (req, res, next) => {
     return express.static(__dirname + '/previews/' + req.sessionID)(req, res, next);
   } else if (req.session.submitted == true && req.session.preview == false) {
     var basepath = 'previews/' + req.sessionID;
-    const child = spawn('python', ['convert.py', basepath + '/equivtex/', basepath + '/equiv/']);
+    let prog;
+    if (process.platform === "win32") {
+      prog = 'python';
+    } else {
+      prog = 'python3';
+    }
+    while (prog === undefined) {
+      setTimeout(() => {}, 50);
+    }
+    const child = spawn(prog, ['convert.py', basepath + '/equivtex/', basepath + '/equiv/']);
     child.stderr.setEncoding('utf8');
     child.stderr.on('data', result => {
       //console.log('stderr:' + result)
@@ -130,6 +168,45 @@ app.use('/', (req, res, next) => {
     return express.static(__dirname + '/site')(req, res, next);
   } else {
     next();
+  }
+});
+
+app.get('/login', (req, res) => {
+  res.sendFile(__dirname + '/login.html');
+  res.end();
+});
+
+app.post('/login',
+  passport.authenticate('local', { failureRedirect: '/login' }),
+  function(req, res) {
+    res.redirect('/admin');
+  }
+);
+
+app.get('/admin', (req, res) => {
+  if (req.session.passport) {
+    let resstr = '';
+    getDirs(__dirname + '/previews', function (dirs) {
+      resstr += '<h1>Admin Panel</h1>\n';
+      resstr += '<h2>Submitted Changes</h2>\n';
+      for (let i = 0; i < dirs.length; i++) {
+        fs.stat(__dirname + '/previews/' + dirs[i] + '/saved.txt', function (err, stat) {
+          if (err == null) {
+            // file exists
+            resstr += `<a href="./${dirs[i]}">${dirs[i]}</a><br>\n`;
+          } else if (err.code === 'ENOENT') {
+            // file does not exist
+          } else {
+            logger.error(err);
+          }
+        }.bind({ i: i })); 
+      }
+      res.send(resstr);
+      res.end();
+    });
+  } else {
+    res.status('403').send("Forbidden");
+    res.end();
   }
 });
 
@@ -184,7 +261,6 @@ app.post('/approve', function (req, res) {
       if (err) logger.error(err);
       fs.unlink(__dirname + '/sessions/' + req.sessionID + '.json', (err) => {
         if (err) logger.error(err);
-        alert("Successfully submitted");
         res.redirect('/');
       });
     });
