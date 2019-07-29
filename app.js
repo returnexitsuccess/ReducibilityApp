@@ -1,5 +1,6 @@
 const express = require('express');
 const session = require('express-session');
+const slash = require('express-slash');
 const uuidv4 = require('uuid/v4');
 const formidable = require('formidable');
 const fs = require('fs-extra');
@@ -184,24 +185,26 @@ app.post('/login',
 );
 
 app.get('/admin', (req, res) => {
+  if (!req.url.endsWith('/')) {
+    res.redirect(301, req.url + '/')
+  }
+  
   if (req.session.passport) {
-    let resstr = '';
     getDirs(__dirname + '/previews', function (dirs) {
-      resstr += '<h1>Admin Panel</h1>\n';
-      resstr += '<h2>Submitted Changes</h2>\n';
+      res.write('<h1>Admin Panel</h1>\n');
+      res.write('<h2>Submitted Changes</h2>\n');
       for (let i = 0; i < dirs.length; i++) {
         fs.stat(__dirname + '/previews/' + dirs[i] + '/saved.txt', function (err, stat) {
           if (err == null) {
             // file exists
-            resstr += `<a href="./${dirs[i]}">${dirs[i]}</a><br>\n`;
+            res.write(`<a href="./${dirs[i]}">${dirs[i]}</a><br>\n`);
           } else if (err.code === 'ENOENT') {
             // file does not exist
           } else {
             logger.error(err);
           }
-        }.bind({ i: i })); 
+        }.bind({ dirs: dirs, i: i})); 
       }
-      res.send(resstr);
       res.end();
     });
   } else {
