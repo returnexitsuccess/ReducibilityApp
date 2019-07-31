@@ -1,6 +1,5 @@
 const express = require('express');
 const session = require('express-session');
-const slash = require('express-slash');
 const uuidv4 = require('uuid/v4');
 const formidable = require('formidable');
 const fs = require('fs-extra');
@@ -10,6 +9,8 @@ const FileStore = require('session-file-store')(session);
 
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
+
+const editJsonFile = require('edit-json-file');
 
 const config = require(__dirname + '/config.js');
 
@@ -118,6 +119,7 @@ app.use((req, res, next) => {
 
 // Previewing changes to site
 app.use('/preview', (req, res, next) => {
+  console.log(req.session.submitted);
   if (req.session.submitted == true && req.session.preview == true) {
     return express.static(__dirname + '/previews/' + req.sessionID)(req, res, next);
   } else if (req.session.submitted == true && req.session.preview == false) {
@@ -184,34 +186,44 @@ app.post('/login',
   }
 );
 
-app.get('/admin', (req, res) => {
+app.get('/admin/', (req, res) => {
   if (!req.url.endsWith('/')) {
     res.redirect(301, req.url + '/')
   }
   
   if (req.session.passport) {
-    getDirs(__dirname + '/previews', function (dirs) {
-      res.write('<h1>Admin Panel</h1>\n');
-      res.write('<h2>Submitted Changes</h2>\n');
-      for (let i = 0; i < dirs.length; i++) {
-        fs.stat(__dirname + '/previews/' + dirs[i] + '/saved.txt', function (err, stat) {
-          if (err == null) {
-            // file exists
-            res.write(`<a href="./${dirs[i]}">${dirs[i]}</a><br>\n`);
-          } else if (err.code === 'ENOENT') {
-            // file does not exist
-          } else {
-            logger.error(err);
-          }
-        }.bind({ dirs: dirs, i: i})); 
+    let resp = '';
+    resp += '<h1>Admin Panel</h1>\n';
+    resp += '<h2>Submitted Changes</h2>\n';
+    resp += '<table style="width:50%">\n';
+    resp += '<tr><th>Date</th><th>Session ID</th></tr>';
+    let count = 0;
+    fs.readFile(__dirname + '/admin.json', (err, result) => {
+      if (err) logger.error(err);
+      let adminjson = JSON.parse(result);
+      let sessions = adminjson.sessionlist;
+      for (let i = 0; i < sessions.length; i++) {
+        resp += `<td>${sessions[i].timestamp}</td>\n`;
+        resp += `<td><a href="./${sessions[i].id}">${sessions[i].id}</a><br></td>\n`;
+        resp += '</tr>';
+        count++;
       }
-      res.end();
+      while (count < adminjson.length) {
+        setTimeout(() => {}, 50);
+      }
+      resp += '</table>';
+      setTimeout(() => {}, 100);
+      res.send(resp);
     });
   } else {
     res.status('403').send("Forbidden");
-    res.end();
   }
 });
+
+app.use('/admin/:id/', (req, res, next) => {
+  //res.send(`Your id is ${req.params.id}`);
+  return express.static(__dirname + '/previews/' + req.params.id)(req, res, next);
+})
 
 // Submitting file
 app.post('/submit', function (req, res) {
@@ -225,10 +237,13 @@ app.post('/submit', function (req, res) {
       for (let i = 0; i < data.equiv.length; i++) {
         if (data.equiv[i].id === newid) {
           alert(`The file ${files.uploadedfile.name} already exists`);
-          res.redirect('submit');
-          res.end();
+          return res.redirect('submit');
         }
       }
+      
+      req.session.submitted = true;
+      req.session.preview = false;
+      
       var oldpath = files.uploadedfile.path;
       var newpath = __dirname + '/previews/' + req.sessionID + '/equivtex/' + files.uploadedfile.name;
       ensureExists(__dirname + '/previews/' + req.sessionID, 0777, function (err) {
@@ -247,7 +262,7 @@ app.post('/submit', function (req, res) {
               req.session.submitted = true;
               req.session.preview = false;
               while (req.session.submitted !== true || req.session.preview !== false) {
-                setTimeout(() => {}, 100);
+                setTimeout(() => {}, 200);
               }
               res.redirect('/preview');
             });
@@ -262,9 +277,20 @@ app.post('/approve', function (req, res) {
   if (req.session.submitted == true && req.session.preview == true) {
     fs.writeFile(__dirname + '/previews/' + req.sessionID + '/saved.txt', req.sessionID + '/n', (err) => {
       if (err) logger.error(err);
-      fs.unlink(__dirname + '/sessions/' + req.sessionID + '.json', (err) => {
+      fs.readFile(__dirname + '/admin.json', (err, result) => {
         if (err) logger.error(err);
-        res.redirect('/');
+        let adminjson = JSON.parse(result);
+        var now = new Date();
+        adminjson.sessionlist.push({ id: req.sessionID, timestamp: `${now.toLocaleString('en-US')}` });
+        let data = JSON.stringify(adminjson);
+        console.log(data);
+        fs.writeFile(__dirname + '/admin.json', data, (err) => {
+          if (err) logger.error(err);
+          fs.unlink(__dirname + '/sessions/' + req.sessionID + '.json', (err) => {
+            if (err) logger.error(err);
+              res.redirect('/');
+          });
+        });
       });
     });
   } else {
@@ -333,4 +359,10 @@ function createDataObject(fields, name) {
     obj.categories.push('countable');
   }
   return obj;
+}
+
+async function asyncForEach(array, callback) {
+  for (let index = 0; index < array.length; index++) {
+    await callback(array[index], index, array);
+  }
 }
