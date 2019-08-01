@@ -204,51 +204,54 @@ app.use('/admin/id/:id/', (req, res, next) => {
 })
 
 // Submitting file
-app.post('/submit', function (req, res) {
-  var form = new formidable.IncomingForm();
-  form.parse(req, function (err, fields, files) {
-    fs.readFile(__dirname + '/site/data.json', (err, result) => {
-      if (err) logger.error(err);
-      jsonstr = result.slice(result.indexOf('=') + 1);
-      let data = JSON.parse(jsonstr);
-      let newid = files.uploadedfile.name.slice(0, files.uploadedfile.name.indexOf('.'));
-      for (let i = 0; i < data.equiv.length; i++) {
-        if (data.equiv[i].id === newid) {
-          alert(`The file ${files.uploadedfile.name} already exists`);
-          return res.redirect('submit');
-        }
-      }
-      
-      req.session.submitted = true;
-      req.session.preview = false;
-      
-      var oldpath = files.uploadedfile.path;
-      var newpath = __dirname + '/previews/' + req.sessionID + '/equivtex/' + files.uploadedfile.name;
-      ensureExists(__dirname + '/previews/' + req.sessionID, 0777, function (err) {
+app.post('/submit/type/:type/', function (req, res) {
+  if (req.params.type === 'equiv') {
+    var form = new formidable.IncomingForm();
+    form.parse(req, function (err, fields, files) {
+      fs.readFile(__dirname + '/site/data.json', (err, result) => {
         if (err) logger.error(err);
-        fs.copy(__dirname + '/site', __dirname + '/previews/' + req.sessionID, function (err) {
+        jsonstr = result.slice(result.indexOf('=') + 1);
+        let data = JSON.parse(jsonstr);
+        let newid = files.uploadedfile.name.slice(0, files.uploadedfile.name.indexOf('.'));
+        for (let i = 0; i < data.equiv.length; i++) {
+          if (data.equiv[i].id === newid) {
+            res.send(`Error: The file ${files.uploadedfile.name} already exists`);
+          }
+        }
+        
+        req.session.submitted = true;
+        req.session.preview = false;
+        
+        var oldpath = files.uploadedfile.path;
+        var newpath = __dirname + '/previews/' + req.sessionID + '/equivtex/' + files.uploadedfile.name;
+        ensureExists(__dirname + '/previews/' + req.sessionID, 0777, function (err) {
           if (err) logger.error(err);
-          fs.copyFile(__dirname + '/preview.css', __dirname + '/previews/' + req.sessionID + '/index.css', function (err) {
+          fs.copy(__dirname + '/site', __dirname + '/previews/' + req.sessionID, function (err) {
             if (err) logger.error(err);
-            fs.copyFile(oldpath, newpath, function (err) {
+            fs.copyFile(__dirname + '/preview.css', __dirname + '/previews/' + req.sessionID + '/index.css', function (err) {
               if (err) logger.error(err);
-              fs.unlink(oldpath, function (err) {
+              fs.copyFile(oldpath, newpath, function (err) {
                 if (err) logger.error(err);
+                fs.unlink(oldpath, function (err) {
+                  if (err) logger.error(err);
+                });
+                req.session.filename = files.uploadedfile.name;
+                req.session.fields = fields;
+                req.session.submitted = true;
+                req.session.preview = false;
+                while (req.session.submitted !== true || req.session.preview !== false) {
+                  setTimeout(() => {}, 200);
+                }
+                res.redirect('/preview');
               });
-              req.session.filename = files.uploadedfile.name;
-              req.session.fields = fields;
-              req.session.submitted = true;
-              req.session.preview = false;
-              while (req.session.submitted !== true || req.session.preview !== false) {
-                setTimeout(() => {}, 200);
-              }
-              res.redirect('/preview');
             });
-          });
+          }.bind({oldpath: oldpath, newpath: newpath}));
         }.bind({oldpath: oldpath, newpath: newpath}));
-      }.bind({oldpath: oldpath, newpath: newpath}));
+      });
     });
-  });
+  } else if (req.params.type === 'reduc') {
+    
+  }
 });
 
 app.post('/approve', function (req, res) {
