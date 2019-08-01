@@ -156,7 +156,7 @@ function setup() {
     return (x-600)*(x-600) / 4000 + 50;
   }, -50, 1250, "goback", null, color(0, 200, 200));
   
-  if (window.location.href.indexOf("id") > -1) {
+  if (window.location.href.indexOf("?id=") > -1) {
     let urlid = getUrlVars()["id"];
     shownElement = select("#" + urlid);
     shownElement.style("display", "");

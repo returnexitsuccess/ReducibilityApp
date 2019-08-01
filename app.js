@@ -186,41 +186,19 @@ app.post('/login',
   }
 );
 
-app.get('/admin/', (req, res) => {
-  if (!req.url.endsWith('/')) {
-    res.redirect(301, req.url + '/')
+app.use('/admin/', (req, res, next) => {
+  if (req.url.endsWith('/admin')) {
+    res.redirect(301, '/admin/');
   }
   
   if (req.session.passport) {
-    let resp = '';
-    resp += '<h1>Admin Panel</h1>\n';
-    resp += '<h2>Submitted Changes</h2>\n';
-    resp += '<table style="width:50%">\n';
-    resp += '<tr><th>Date</th><th>Session ID</th></tr>';
-    let count = 0;
-    fs.readFile(__dirname + '/admin.json', (err, result) => {
-      if (err) logger.error(err);
-      let adminjson = JSON.parse(result);
-      let sessions = adminjson.sessionlist;
-      for (let i = 0; i < sessions.length; i++) {
-        resp += `<td>${sessions[i].timestamp}</td>\n`;
-        resp += `<td><a href="./${sessions[i].id}">${sessions[i].id}</a><br></td>\n`;
-        resp += '</tr>';
-        count++;
-      }
-      while (count < adminjson.length) {
-        setTimeout(() => {}, 50);
-      }
-      resp += '</table>';
-      setTimeout(() => {}, 100);
-      res.send(resp);
-    });
+    return express.static(__dirname + '/admin/')(req, res, next);
   } else {
     res.status('403').send("Forbidden");
   }
 });
 
-app.use('/admin/:id/', (req, res, next) => {
+app.use('/admin/id/:id/', (req, res, next) => {
   //res.send(`Your id is ${req.params.id}`);
   return express.static(__dirname + '/previews/' + req.params.id)(req, res, next);
 })
@@ -277,14 +255,14 @@ app.post('/approve', function (req, res) {
   if (req.session.submitted == true && req.session.preview == true) {
     fs.writeFile(__dirname + '/previews/' + req.sessionID + '/saved.txt', req.sessionID + '/n', (err) => {
       if (err) logger.error(err);
-      fs.readFile(__dirname + '/admin.json', (err, result) => {
+      fs.readFile(__dirname + '/admin/admin.json', (err, result) => {
         if (err) logger.error(err);
-        let adminjson = JSON.parse(result);
+        let adminjson = JSON.parse(result.slice(7));
         var now = new Date();
         adminjson.sessionlist.push({ id: req.sessionID, timestamp: `${now.toLocaleString('en-US')}` });
         let data = JSON.stringify(adminjson);
         console.log(data);
-        fs.writeFile(__dirname + '/admin.json', data, (err) => {
+        fs.writeFile(__dirname + '/admin/admin.json', 'data = ' + data, (err) => {
           if (err) logger.error(err);
           fs.unlink(__dirname + '/sessions/' + req.sessionID + '.json', (err) => {
             if (err) logger.error(err);
