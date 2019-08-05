@@ -123,41 +123,79 @@ app.use('/preview', (req, res, next) => {
   if (req.session.submitted == true && req.session.preview == true) {
     return express.static(__dirname + '/previews/' + req.sessionID)(req, res, next);
   } else if (req.session.submitted == true && req.session.preview == false) {
-    var basepath = 'previews/' + req.sessionID;
-    let prog;
-    if (process.platform === "win32") {
-      prog = 'python';
-    } else {
-      prog = 'python3';
-    }
-    while (prog === undefined) {
-      setTimeout(() => {}, 50);
-    }
-    const child = spawn(prog, ['convert.py', basepath + '/equivtex/', basepath + '/equiv/']);
-    child.stderr.setEncoding('utf8');
-    child.stderr.on('data', result => {
-      //console.log('stderr:' + result)
-    });
-    child.on('exit', code => {
-      //console.log(`Exited with ${code}`);
-      obj = createDataObject(req.session.fields, req.session.filename);
-      fs.readFile(__dirname + '/previews/' + req.sessionID + '/data.json', (err, data) => {
-        if (err) logger.error(err);
-        jsonstr = data.slice(data.indexOf('=') + 1);
-        let json = JSON.parse(jsonstr);
-        json.equiv.push(obj);
-        fs.writeFile(__dirname + '/previews/' + req.sessionID + '/data.json', "data = " + JSON.stringify(json), (err) => {
+    if (req.session.type === 'equiv') {
+      var basepath = 'previews/' + req.sessionID;
+      let prog;
+      if (process.platform === "win32") {
+        prog = 'python';
+      } else {
+        prog = 'python3';
+      }
+      while (prog === undefined) {
+        setTimeout(() => {}, 50);
+      }
+      const child = spawn(prog, ['convert.py', basepath + '/equivtex/', basepath + '/equiv/']);
+      child.stderr.setEncoding('utf8');
+      child.stderr.on('data', result => {
+        //console.log('stderr:' + result)
+      });
+      child.on('exit', code => {
+        //console.log(`Exited with ${code}`);
+        obj = createEquivObject(req.session.fields, req.session.filename);
+        fs.readFile(__dirname + '/previews/' + req.sessionID + '/data.json', (err, data) => {
           if (err) logger.error(err);
-          req.session.preview = true;
-          while (req.session.submitted !== true || req.session.preview !== true) {
-            setTimeout(() => {}, 100);
-          }
-          res.redirect('/preview');
-          
-          next();
+          jsonstr = data.slice(data.indexOf('=') + 1);
+          let json = JSON.parse(jsonstr);
+          json.equiv.push(obj);
+          fs.writeFile(__dirname + '/previews/' + req.sessionID + '/data.json', "data = " + JSON.stringify(json), (err) => {
+            if (err) logger.error(err);
+            req.session.preview = true;
+            while (req.session.submitted !== true || req.session.preview !== true) {
+              setTimeout(() => {}, 100);
+            }
+            res.redirect('/preview');
+            
+            next();
+          });
         });
       });
-    });
+    } else if (req.session.type === 'reduc') {
+      var basepath = 'previews/' + req.sessionID;
+      let prog;
+      if (process.platform === "win32") {
+        prog = 'python';
+      } else {
+        prog = 'python3';
+      }
+      while (prog === undefined) {
+        setTimeout(() => {}, 50);
+      }
+      const child = spawn(prog, ['convert.py', basepath + '/reductex/', basepath + '/reduc/']);
+      child.stderr.setEncoding('utf8');
+      child.stderr.on('data', result => {
+        //console.log('stderr:' + result)
+      });
+      child.on('exit', code => {
+        //console.log(`Exited with ${code}`);
+        obj = createReducObject(req.session.fields, req.session.filename);
+        fs.readFile(__dirname + '/previews/' + req.sessionID + '/data.json', (err, data) => {
+          if (err) logger.error(err);
+          jsonstr = data.slice(data.indexOf('=') + 1);
+          let json = JSON.parse(jsonstr);
+          json.reduc.push(obj);
+          fs.writeFile(__dirname + '/previews/' + req.sessionID + '/data.json', "data = " + JSON.stringify(json), (err) => {
+            if (err) logger.error(err);
+            req.session.preview = true;
+            while (req.session.submitted !== true || req.session.preview !== true) {
+              setTimeout(() => {}, 100);
+            }
+            res.redirect('/preview');
+            
+            next();
+          });
+        });
+      });
+    }
   } else {
     res.redirect('/');
     next();
@@ -205,6 +243,7 @@ app.use('/admin/id/:id/', (req, res, next) => {
 
 // Submitting file
 app.post('/submit/type/:type/', function (req, res) {
+  req.session.type = req.params.type;
   if (req.params.type === 'equiv') {
     var form = new formidable.IncomingForm();
     form.parse(req, function (err, fields, files) {
@@ -250,7 +289,49 @@ app.post('/submit/type/:type/', function (req, res) {
       });
     });
   } else if (req.params.type === 'reduc') {
-    
+    var form = new formidable.IncomingForm();
+    form.parse(req, function (err, fields, files) {
+      fs.readFile(__dirname + '/site/data.json', (err, result) => {
+        if (err) logger.error(err);
+        jsonstr = result.slice(result.indexOf('=') + 1);
+        let data = JSON.parse(jsonstr);
+        let newid = files.uploadedfile.name.slice(0, files.uploadedfile.name.indexOf('.'));
+        for (let i = 0; i < data.reduc.length; i++) {
+          if (data.reduc[i].id === newid) {
+            res.send(`Error: The file ${files.uploadedfile.name} already exists`);
+          }
+        }
+        
+        req.session.submitted = true;
+        req.session.preview = false;
+        
+        var oldpath = files.uploadedfile.path;
+        var newpath = __dirname + '/previews/' + req.sessionID + '/reductex/' + files.uploadedfile.name;
+        ensureExists(__dirname + '/previews/' + req.sessionID, 0777, function (err) {
+          if (err) logger.error(err);
+          fs.copy(__dirname + '/site', __dirname + '/previews/' + req.sessionID, function (err) {
+            if (err) logger.error(err);
+            fs.copyFile(__dirname + '/preview.css', __dirname + '/previews/' + req.sessionID + '/index.css', function (err) {
+              if (err) logger.error(err);
+              fs.copyFile(oldpath, newpath, function (err) {
+                if (err) logger.error(err);
+                fs.unlink(oldpath, function (err) {
+                  if (err) logger.error(err);
+                });
+                req.session.filename = files.uploadedfile.name;
+                req.session.fields = fields;
+                req.session.submitted = true;
+                req.session.preview = false;
+                while (req.session.submitted !== true || req.session.preview !== false) {
+                  setTimeout(() => {}, 200);
+                }
+                res.redirect('/preview');
+              });
+            });
+          }.bind({oldpath: oldpath, newpath: newpath}));
+        }.bind({oldpath: oldpath, newpath: newpath}));
+      });
+    });
   }
 });
 
@@ -319,7 +400,7 @@ function getDirs(rootDir, cb) {
     });
 }
 
-function createDataObject(fields, name) {
+function createEquivObject(fields, name) {
   obj = {};
   obj.name = fields.name;
   obj.label = fields.label;
@@ -338,6 +419,24 @@ function createDataObject(fields, name) {
   }
   if (fields.countable === 'countable') {
     obj.categories.push('countable');
+  }
+  return obj;
+}
+
+function createReducObject(fields, name) {
+  obj = {};
+  obj.upperlabel = fields.upper;
+  obj.lowerlabel = fields.lower;
+  obj.id = name.slice(0, name.indexOf('.'));
+  if (fields.countable) {
+    obj.countable = true;
+  }
+  if (fields.type === 'strict') {
+    obj.edgetype = 'arrow';
+  } else if (fields.type === 'bireduction') {
+    obj.edgetype = 'solid';
+  } else if (fields.type === 'neither') {
+    obj.edgetype = 'doublearrow';
   }
   return obj;
 }

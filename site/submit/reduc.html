@@ -18,22 +18,21 @@
 <body>
   <h1>Reduction Submission</h1>
   <form action="/submit/type/reduc/" method="post" enctype="multipart/form-data">
-    <p> Please upload your .tex file following the template found <a href="/template.tex">here</a>.</p>
+    <p> Please upload your .tex file following the template found <a href="/reductemplate.tex">here</a>.</p>
     <input type="file" name="uploadedfile" onchange="validate(this)"><br>
 
-    Equivalence Relation Name (full name)<br>
-    <input type="text" name="name"><br>
-    Equivalence Relation Label (shortened version of name to appear on the graph)<br>
-    <input type="text" name="label"><br>
+    Upper Relation Label<br>
+    <input type="text" name="upper"><br>
+    Lower Relation Label<br>
+    <input type="text" name="lower"><br>
 
-    X-Y Coordinates on Graph (integers between 0 and 1200 for x, 0 and 800 for y)<br>
-    <input type="number" name="x" min="0" max="1200"><input type="number" name="y" min="0" max="800"><br>
+    What type of reduction?<br>
+    <input type="radio" name="type" value="strict"> Strict<br>
+    <input type="radio" name="type" value="bireduction"> Bireduction<br>
+    <input type="radio" name="type" value="neither"> Neither<br>
 
-    Categories<br>
-    <input type="checkbox" name="sinf" value="sinf"> S Infinity <br>
-    <input type="checkbox" name="borel" value="borel"> Borel <br>
-    <input type="checkbox" name="polish" value="polish"> Polish Group Action <br>
-    <input type="checkbox" name="countable" value="countable"> Countable <br>
+    Check if this is between countable equivalence relations:<br>
+    <input type="checkbox" name="countable" value="countable"> Countable<br>
 
     <input type="submit">
   </form>
