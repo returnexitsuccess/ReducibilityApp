@@ -89,7 +89,7 @@ passport.serializeUser((user, done) => {
 });
 
 passport.deserializeUser((id, cb) => {
-  cb(null, config.users[0]);
+  cb(null, config.users.find(x => x.id === id));
 });
 
 
@@ -220,7 +220,9 @@ app.get('/login', (req, res) => {
 app.post('/login',
   passport.authenticate('local', { failureRedirect: '/login' }),
   function(req, res) {
-    res.redirect('/admin');
+    req.session.save(() => {
+      res.redirect('/admin/');
+    });
   }
 );
 
@@ -278,10 +280,9 @@ app.post('/submit/type/:type/', function (req, res) {
                 req.session.fields = fields;
                 req.session.submitted = true;
                 req.session.preview = false;
-                while (req.session.submitted !== true || req.session.preview !== false) {
-                  setTimeout(() => {}, 200);
-                }
-                res.redirect('/preview');
+                req.session.save(() => {
+                  res.redirect('/preview');
+                });
               });
             });
           }.bind({oldpath: oldpath, newpath: newpath}));
@@ -322,10 +323,9 @@ app.post('/submit/type/:type/', function (req, res) {
                 req.session.fields = fields;
                 req.session.submitted = true;
                 req.session.preview = false;
-                while (req.session.submitted !== true || req.session.preview !== false) {
-                  setTimeout(() => {}, 200);
-                }
-                res.redirect('/preview');
+                req.session.save(() => {
+                  res.redirect('/preview');
+                });
               });
             });
           }.bind({oldpath: oldpath, newpath: newpath}));

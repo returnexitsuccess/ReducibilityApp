@@ -3,7 +3,7 @@
 <head>
   <script type="text/javascript">
     function validate(elt) {
-      var regex = /^(?:[\w]\:|\\)(\\[a-z]+)+\.tex$/;
+      var regex = /^(?:[\w]\:|\\)(\\[a-z\-]+)+\.tex$/;
       if (elt.value.match(regex)) {
         return true;
       } else {
