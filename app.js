@@ -119,7 +119,7 @@ app.use((req, res, next) => {
 
 // Previewing changes to site
 app.use('/preview', (req, res, next) => {
-  console.log(req.session.submitted);
+  //console.log(req.session.submitted);
   if (req.session.submitted == true && req.session.preview == true) {
     return express.static(__dirname + '/previews/' + req.sessionID)(req, res, next);
   } else if (req.session.submitted == true && req.session.preview == false) {
