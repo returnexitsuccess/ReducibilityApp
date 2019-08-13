@@ -88,10 +88,10 @@ class Edge {
     if (d < pow(this.width, 2)) {
       //console.log("click edge");
       if (prevelt) {
-        prevelt.hide();
+        prevelt.style("visibility", "hidden");
       }
       if (this.element) {
-        this.element.style("display", "");
+        this.element.style("visibility", "");
       }
       for (let i = 0; i < rlist.length; i++) {
         rlist[i].highlight(false);

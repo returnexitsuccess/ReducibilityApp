@@ -3,16 +3,9 @@
 <head>
   <script type="text/javascript">
     let loaded = false;
-    var head = document.getElementsByTagName('head')[0];
-    var js = document.createElement("script");
-
-    js.type = "text/javascript";
-    js.src = "/preview/data.json";
-    js.addEventListener("load", () => {
-      loaded = true;
-    })
-    head.appendChild(js);
-
+  </script>
+  <script type="text/javascript" src="/preview/data.json" onload="() => {loaded=true;}"></script>
+  <script type="text/javascript">
     function validate(elt) {
       var regex = /^(?:[\w]\:|\\)(\\[a-z\-]+)+\.tex$/;
       if (elt.value.match(regex)) {
@@ -30,6 +23,21 @@
 
         js.type = "text/javascript";
         js.src = "/data.json";
+        js.addEventListener('load', function() {
+          var upper = document.getElementById('upperselect');
+          var lower = document.getElementById('lowerselect');
+          for (var i = 0; i < data.equiv.length; i++) {
+            equiv = data.equiv[i];
+            var option1 = document.createElement("option");
+            var option2 = document.createElement("option");
+            option1.value = equiv.id;
+            option1.innerHTML = equiv.label;
+            option2.value = equiv.id;
+            option2.innerHTML = equiv.label;
+            upper.appendChild(option1);
+            lower.appendChild(option2);
+          }
+        });
         head.appendChild(js);
       }
     }
@@ -40,22 +48,22 @@
   <h1>Reduction Submission</h1>
   <form action="/submit/type/reduc/" method="post" enctype="multipart/form-data">
     <p> Please upload your .tex file following the template found <a href="/reductemplate.tex">here</a>.</p>
-    <input type="file" name="uploadedfile" onchange="validate(this)"><br>
-
-    Upper Relation Label<br>
-    <input type="text" name="upper"><br>
-    Lower Relation Label<br>
-    <input type="text" name="lower"><br>
+    <input type="file" name="uploadedfile" onchange="validate(this)" required><br>
 
     Upper Equivalence Relation<br>
-    <select id="upperselect">
+    <select name="upperselect" id="upperselect" required>
+      <option value="">Please select</option>
+    </select><br>
 
-    </select>
+    Lower Equivalence Relation<br>
+    <select name="lowerselect" id="lowerselect" required>
+      <option value="">Please select</option>
+    </select><br>
 
     What type of reduction?<br>
-    <input type="radio" name="type" value="strict"> Strict<br>
-    <input type="radio" name="type" value="bireduction"> Bireduction<br>
-    <input type="radio" name="type" value="neither"> Neither<br>
+    <input type="radio" name="type" value="strict" required> Strict<br>
+    <input type="radio" name="type" value="bireduction" required> Bireduction<br>
+    <input type="radio" name="type" value="neither" required> Neither<br>
 
     Check if this is between countable equivalence relations:<br>
     <input type="checkbox" name="countable" value="countable"> Countable<br>

@@ -42,7 +42,7 @@ function setup() {
     // Create html element
     element = createDiv();
     element.id(item.id);
-    element.style("display", "none");
+    element.style("visibility", "hidden");
     element.parent(body);
     
     // Add html from file
@@ -75,7 +75,7 @@ function setup() {
     // Create html element
     element = createDiv();
     element.id(item.id);
-    element.style("display", "none");
+    element.style("visibility", "hidden");
     element.parent(body);
     
     // Import html from file
@@ -159,7 +159,7 @@ function setup() {
   if (window.location.href.indexOf("?id=") > -1) {
     let urlid = getUrlVars()["id"];
     shownElement = select("#" + urlid);
-    shownElement.style("display", "");
+    shownElement.style("visibility", "");
   }
 }
 

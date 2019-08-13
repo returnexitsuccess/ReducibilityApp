@@ -60,10 +60,10 @@ class Region {
   click(mx, my, prevelt) {
     if (mx > this.x1 && mx < this.x2 && my > this.y1 && my < this.y2) {
       if (prevelt) {
-        prevelt.hide();
+        prevelt.style("visibility", "hidden");
       }
       if (this.element) {
-        this.element.style("display", "");
+        this.element.style("visibility", "");
       }
       for (let i = 0; i < rlist.length; i++) {
         rlist[i].highlight(false);

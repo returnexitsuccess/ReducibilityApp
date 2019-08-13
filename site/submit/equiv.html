@@ -19,15 +19,15 @@
   <h1>Equivalence Relation Submission</h1>
   <form action="/submit/type/equiv/" method="post" enctype="multipart/form-data">
     <p> Please upload your .tex file following the template found <a href="/equivtemplate.tex">here</a>.</p>
-    <input type="file" name="uploadedfile" onchange="validate(this)"><br>
+    <input type="file" name="uploadedfile" onchange="validate(this)" required><br>
 
     Equivalence Relation Name (full name)<br>
-    <input type="text" name="name"><br>
+    <input type="text" name="name" required><br>
     Equivalence Relation Label (shortened version of name to appear on the graph)<br>
-    <input type="text" name="label"><br>
+    <input type="text" name="label" required><br>
 
     X-Y Coordinates on Graph (integers between 0 and 1200 for x, 0 and 800 for y)<br>
-    <input type="number" name="x" min="0" max="1200"><input type="number" name="y" min="0" max="800"><br>
+    <input type="number" name="x" min="0" max="1200" required><input type="number" name="y" min="0" max="800" required><br>
 
     Categories<br>
     <input type="checkbox" name="sinf" value="sinf"> S Infinity <br>

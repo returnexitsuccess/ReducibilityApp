@@ -177,11 +177,14 @@ app.use('/preview', (req, res, next) => {
       });
       child.on('exit', code => {
         //console.log(`Exited with ${code}`);
-        obj = createReducObject(req.session.fields, req.session.filename);
+        
         fs.readFile(__dirname + '/previews/' + req.sessionID + '/data.json', (err, data) => {
           if (err) logger.error(err);
           jsonstr = data.slice(data.indexOf('=') + 1);
           let json = JSON.parse(jsonstr);
+          
+          obj = createReducObject(req.session.fields, req.session.filename, json.equiv);
+          
           json.reduc.push(obj);
           fs.writeFile(__dirname + '/previews/' + req.sessionID + '/data.json', "data = " + JSON.stringify(json), (err) => {
             if (err) logger.error(err);
@@ -319,7 +322,7 @@ app.post('/submit/type/:type/', function (req, res) {
         if (err) logger.error(err);
         jsonstr = result.slice(result.indexOf('=') + 1);
         let data = JSON.parse(jsonstr);
-        let newid = files.uploadedfile.name.slice(0, files.uploadedfile.name.indexOf('.'));
+        let newid = fields.upperselect + '-' + fields.lowerselect;
         for (let i = 0; i < data.reduc.length; i++) {
           if (data.reduc[i].id === newid) {
             res.send(`Error: The file ${files.uploadedfile.name} already exists`);
@@ -330,7 +333,7 @@ app.post('/submit/type/:type/', function (req, res) {
         req.session.preview = false;
         
         let oldpath = files.uploadedfile.path;
-        let newpath = __dirname + '/previews/' + req.sessionID + '/reductex/' + files.uploadedfile.name;
+        let newpath = __dirname + '/previews/' + req.sessionID + '/reductex/' + newid + '.tex';
         ensureExists(__dirname + '/previews/' + req.sessionID, 0777, function (err, exists) {
           if (err) logger.error(err);
           if (!exists) {
@@ -343,7 +346,7 @@ app.post('/submit/type/:type/', function (req, res) {
                   fs.unlink(oldpath, function (err) {
                     if (err) logger.error(err);
                   });
-                  req.session.filename = files.uploadedfile.name;
+                  req.session.filename = newid + '.tex';
                   req.session.fields = fields;
                   req.session.new = [{ type: 'reduc', id: newid }];
                   req.session.submitted = true;
@@ -360,7 +363,7 @@ app.post('/submit/type/:type/', function (req, res) {
               fs.unlink(oldpath, function (err) {
                 if (err) logger.error(err);
               });
-              req.session.filename = files.uploadedfile.name;
+              req.session.filename = newid + '.tex';
               req.session.fields = fields;
               req.session.new.push({ type: 'reduc', id: newid });
               req.session.submitted = true;
@@ -488,10 +491,17 @@ function createEquivObject(fields, name) {
   return obj;
 }
 
-function createReducObject(fields, name) {
+function createReducObject(fields, name, equivlist) {
+  console.log(fields);
   obj = {};
-  obj.upperlabel = fields.upper;
-  obj.lowerlabel = fields.lower;
+  for (var i = 0; i < equivlist.length; i++) {
+    if (equivlist[i].id === fields.upperselect) {
+      obj.upperlabel = equivlist[i].label;
+    }
+    if (equivlist[i].id === fields.lowerselect) {
+      obj.lowerlabel = equivlist[i].label;
+    }
+  }
   obj.id = name.slice(0, name.indexOf('.'));
   if (fields.countable) {
     obj.countable = true;
