@@ -241,6 +241,7 @@ app.use('/admin/', (req, res, next) => {
 app.use('/admin/id/:id/', (req, res, next) => {
   //res.send(`Your id is ${req.params.id}`);
   if (req.session.passport) {
+    req.session.previewID = req.params.id;
     return express.static(__dirname + '/previews/' + req.params.id)(req, res, next);
   } else {
     res.status('403').send("Forbidden");
@@ -377,7 +378,27 @@ app.post('/submit/type/:type/', function (req, res) {
 
 app.post('/approve', function (req, res) {
   if (req.session.passport) {
-    
+    if (req.session.hasOwnProperty('previewID')) {
+      let id = req.session.previewID;
+    } else {
+      let id = req.sessionID;
+    }
+    let texpromises = req.session.new.map(obj => {
+      const source = __dirname + '/previews/' + id + '/' + obj.type + 'tex/' + obj.id + '.tex';
+      const destination = __dirname + '/site/' + obj.type + 'tex/' + obj.id + '.tex';
+      return copyFilePromise(source, destination);
+    });
+    let htmlpromises = req.session.new.map(obj => {
+      const source = __dirname + '/previews/' + id + '/' + obj.type + '/' + obj.id + '.html';
+      const destination = __dirname + '/site/' + obj.type + '/' + obj.id + '.html';
+      return copyFilePromise(source, destination);
+    });
+    const promises = texpromises.concat(htmlpromises);
+    Promise.all(promises).then(() => {
+      logger.info('updated site with ' + req.session.new.map(obj => obj.id).toString());
+    }).catch((err) => {
+      logger.error(err);
+    });
   } else {
     if (req.session.submitted == true && req.session.preview == true) {
       fs.writeFile(__dirname + '/previews/' + req.sessionID + '/saved.txt', req.sessionID + '/n', (err) => {
@@ -489,4 +510,16 @@ async function asyncForEach(array, callback) {
   for (let index = 0; index < array.length; index++) {
     await callback(array[index], index, array);
   }
+}
+
+function copyFilePromise(source, destination) {
+    const input = fs.createReadStream(source);
+    const output = fs.createWriteStream(destination);
+    return new Promise((resolve, reject) => {
+
+        output.on('error', reject);
+        input.on('error', reject);
+        input.on('end', resolve);
+        input.pipe(output);
+    });
 }
