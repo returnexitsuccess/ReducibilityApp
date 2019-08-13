@@ -2,6 +2,17 @@
 
 <head>
   <script type="text/javascript">
+    let loaded = false;
+    var head = document.getElementsByTagName('head')[0];
+    var js = document.createElement("script");
+
+    js.type = "text/javascript";
+    js.src = "/preview/data.json";
+    js.addEventListener("load", () => {
+      loaded = true;
+    })
+    head.appendChild(js);
+
     function validate(elt) {
       var regex = /^(?:[\w]\:|\\)(\\[a-z\-]+)+\.tex$/;
       if (elt.value.match(regex)) {
@@ -10,6 +21,16 @@
         alert("Must upload a .tex file with name having only lowercase letters");
         elt.value = "";
         return false;
+      }
+    }
+    window.onload = function() {
+      if (!loaded) {
+        var head = document.getElementsByTagName('head')[0];
+        var js = document.createElement("script");
+
+        js.type = "text/javascript";
+        js.src = "/data.json";
+        head.appendChild(js);
       }
     }
   </script>
@@ -25,6 +46,11 @@
     <input type="text" name="upper"><br>
     Lower Relation Label<br>
     <input type="text" name="lower"><br>
+
+    Upper Equivalence Relation<br>
+    <select id="upperselect">
+
+    </select>
 
     What type of reduction?<br>
     <input type="radio" name="type" value="strict"> Strict<br>

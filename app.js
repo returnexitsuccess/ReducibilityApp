@@ -240,7 +240,11 @@ app.use('/admin/', (req, res, next) => {
 
 app.use('/admin/id/:id/', (req, res, next) => {
   //res.send(`Your id is ${req.params.id}`);
-  return express.static(__dirname + '/previews/' + req.params.id)(req, res, next);
+  if (req.session.passport) {
+    return express.static(__dirname + '/previews/' + req.params.id)(req, res, next);
+  } else {
+    res.status('403').send("Forbidden");
+  }
 })
 
 // Submitting file
@@ -263,30 +267,48 @@ app.post('/submit/type/:type/', function (req, res) {
         req.session.submitted = true;
         req.session.preview = false;
         
-        var oldpath = files.uploadedfile.path;
-        var newpath = __dirname + '/previews/' + req.sessionID + '/equivtex/' + files.uploadedfile.name;
-        ensureExists(__dirname + '/previews/' + req.sessionID, 0777, function (err) {
+        let oldpath = files.uploadedfile.path;
+        let newpath = __dirname + '/previews/' + req.sessionID + '/equivtex/' + files.uploadedfile.name;
+        ensureExists(__dirname + '/previews/' + req.sessionID, 0777, function (err, exists) {
           if (err) logger.error(err);
-          fs.copy(__dirname + '/site', __dirname + '/previews/' + req.sessionID, function (err) {
-            if (err) logger.error(err);
-            fs.copyFile(__dirname + '/preview.css', __dirname + '/previews/' + req.sessionID + '/index.css', function (err) {
+          if (!exists) {
+            fs.copy(__dirname + '/site', __dirname + '/previews/' + req.sessionID, function (err) {
               if (err) logger.error(err);
-              fs.copyFile(oldpath, newpath, function (err) {
+              fs.copyFile(__dirname + '/preview.css', __dirname + '/previews/' + req.sessionID + '/index.css', function (err) {
                 if (err) logger.error(err);
-                fs.unlink(oldpath, function (err) {
+                fs.copyFile(oldpath, newpath, function (err) {
                   if (err) logger.error(err);
-                });
-                req.session.filename = files.uploadedfile.name;
-                req.session.fields = fields;
-                req.session.submitted = true;
-                req.session.preview = false;
-                req.session.save(() => {
-                  res.redirect('/preview');
+                  fs.unlink(oldpath, function (err) {
+                    if (err) logger.error(err);
+                  });
+                  req.session.filename = files.uploadedfile.name;
+                  req.session.fields = fields;
+                  req.session.new = [{ type: 'equiv', id: newid }];
+                  req.session.submitted = true;
+                  req.session.preview = false;
+                  req.session.save(() => {
+                    res.redirect('/preview');
+                  });
                 });
               });
             });
-          }.bind({oldpath: oldpath, newpath: newpath}));
-        }.bind({oldpath: oldpath, newpath: newpath}));
+          } else {
+            fs.copyFile(oldpath, newpath, function (err) {
+              if (err) logger.error(err);
+              fs.unlink(oldpath, function (err) {
+                if (err) logger.error(err);
+              });
+              req.session.filename = files.uploadedfile.name;
+              req.session.fields = fields;
+              req.session.new.push({ type: 'equiv', id: newid });
+              req.session.submitted = true;
+              req.session.preview = false;
+              req.session.save(() => {
+                res.redirect('/preview');
+              });
+            });
+          }
+        });
       });
     });
   } else if (req.params.type === 'reduc') {
@@ -306,57 +328,79 @@ app.post('/submit/type/:type/', function (req, res) {
         req.session.submitted = true;
         req.session.preview = false;
         
-        var oldpath = files.uploadedfile.path;
-        var newpath = __dirname + '/previews/' + req.sessionID + '/reductex/' + files.uploadedfile.name;
-        ensureExists(__dirname + '/previews/' + req.sessionID, 0777, function (err) {
+        let oldpath = files.uploadedfile.path;
+        let newpath = __dirname + '/previews/' + req.sessionID + '/reductex/' + files.uploadedfile.name;
+        ensureExists(__dirname + '/previews/' + req.sessionID, 0777, function (err, exists) {
           if (err) logger.error(err);
-          fs.copy(__dirname + '/site', __dirname + '/previews/' + req.sessionID, function (err) {
-            if (err) logger.error(err);
-            fs.copyFile(__dirname + '/preview.css', __dirname + '/previews/' + req.sessionID + '/index.css', function (err) {
+          if (!exists) {
+            fs.copy(__dirname + '/site', __dirname + '/previews/' + req.sessionID, function (err) {
               if (err) logger.error(err);
-              fs.copyFile(oldpath, newpath, function (err) {
+              fs.copyFile(__dirname + '/preview.css', __dirname + '/previews/' + req.sessionID + '/index.css', function (err) {
                 if (err) logger.error(err);
-                fs.unlink(oldpath, function (err) {
+                fs.copyFile(oldpath, newpath, function (err) {
                   if (err) logger.error(err);
-                });
-                req.session.filename = files.uploadedfile.name;
-                req.session.fields = fields;
-                req.session.submitted = true;
-                req.session.preview = false;
-                req.session.save(() => {
-                  res.redirect('/preview');
+                  fs.unlink(oldpath, function (err) {
+                    if (err) logger.error(err);
+                  });
+                  req.session.filename = files.uploadedfile.name;
+                  req.session.fields = fields;
+                  req.session.new = [{ type: 'reduc', id: newid }];
+                  req.session.submitted = true;
+                  req.session.preview = false;
+                  req.session.save(() => {
+                    res.redirect('/preview');
+                  });
                 });
               });
             });
-          }.bind({oldpath: oldpath, newpath: newpath}));
-        }.bind({oldpath: oldpath, newpath: newpath}));
+          } else {
+            fs.copyFile(oldpath, newpath, function (err) {
+              if (err) logger.error(err);
+              fs.unlink(oldpath, function (err) {
+                if (err) logger.error(err);
+              });
+              req.session.filename = files.uploadedfile.name;
+              req.session.fields = fields;
+              req.session.new.push({ type: 'reduc', id: newid });
+              req.session.submitted = true;
+              req.session.preview = false;
+              req.session.save(() => {
+                res.redirect('/preview');
+              });
+            });
+          }
+        });
       });
     });
   }
 });
 
 app.post('/approve', function (req, res) {
-  if (req.session.submitted == true && req.session.preview == true) {
-    fs.writeFile(__dirname + '/previews/' + req.sessionID + '/saved.txt', req.sessionID + '/n', (err) => {
-      if (err) logger.error(err);
-      fs.readFile(__dirname + '/admin/admin.json', (err, result) => {
+  if (req.session.passport) {
+    
+  } else {
+    if (req.session.submitted == true && req.session.preview == true) {
+      fs.writeFile(__dirname + '/previews/' + req.sessionID + '/saved.txt', req.sessionID + '/n', (err) => {
         if (err) logger.error(err);
-        let adminjson = JSON.parse(result.slice(7));
-        var now = new Date();
-        adminjson.sessionlist.push({ id: req.sessionID, timestamp: `${now.toLocaleString('en-US')}` });
-        let data = JSON.stringify(adminjson);
-        console.log(data);
-        fs.writeFile(__dirname + '/admin/admin.json', 'data = ' + data, (err) => {
+        fs.readFile(__dirname + '/admin/admin.json', (err, result) => {
           if (err) logger.error(err);
-          fs.unlink(__dirname + '/sessions/' + req.sessionID + '.json', (err) => {
+          let adminjson = JSON.parse(result.slice(7));
+          var now = new Date();
+          adminjson.sessionlist.push({ id: req.sessionID, timestamp: `${now.toLocaleString('en-US')}` });
+          let data = JSON.stringify(adminjson);
+          console.log(data);
+          fs.writeFile(__dirname + '/admin/admin.json', 'data = ' + data, (err) => {
             if (err) logger.error(err);
-              res.redirect('/');
+            fs.unlink(__dirname + '/sessions/' + req.sessionID + '.json', (err) => {
+              if (err) logger.error(err);
+                res.redirect('/');
+            });
           });
         });
       });
-    });
-  } else {
-    res.redirect('/');
+    } else {
+      res.redirect('/');
+    }
   }
 });
  
@@ -374,9 +418,9 @@ function ensureExists(path, mask, cb) {
     }
     fs.mkdir(path, mask, function(err) {
         if (err) {
-            if (err.code == 'EEXIST') cb(null); // ignore the error if the folder already exists
-            else cb(err); // something else went wrong
-        } else cb(null); // successfully created folder
+            if (err.code == 'EEXIST') cb(null, true); // ignore the error if the folder already exists
+            else cb(err, null); // something else went wrong
+        } else cb(null, false); // successfully created folder
     });
 }
 
@@ -434,9 +478,9 @@ function createReducObject(fields, name) {
   if (fields.type === 'strict') {
     obj.edgetype = 'arrow';
   } else if (fields.type === 'bireduction') {
-    obj.edgetype = 'solid';
-  } else if (fields.type === 'neither') {
     obj.edgetype = 'doublearrow';
+  } else if (fields.type === 'neither') {
+    obj.edgetype = 'solid';
   }
   return obj;
 }
