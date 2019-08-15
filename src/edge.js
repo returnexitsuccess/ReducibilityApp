@@ -91,7 +91,8 @@ class Edge {
         prevelt.style("display", "none");
       }
       if (this.element) {
-        this.element.style("display", "");
+        //this.element.style("display", "");
+        showAndRender(this.element);
       }
       for (let i = 0; i < rlist.length; i++) {
         rlist[i].highlight(false);

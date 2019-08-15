@@ -68,6 +68,10 @@ function setup() {
         addHTMLCats(element, cat);
       }
     }
+    element.changed((a) => {
+      console.log("change");
+      console.log(a);
+    });
   }
   
   for (let i = 0; i < data.reduc.length; i++) {
@@ -159,7 +163,8 @@ function setup() {
   if (window.location.href.indexOf("?id=") > -1) {
     let urlid = getUrlVars()["id"];
     shownElement = select("#" + urlid);
-    shownElement.style("display", "");
+    //shownElement.style("display", "");
+    showAndRender(shownElement);
   }
 }
 
@@ -413,4 +418,10 @@ function addHTMLCats(element, cat) {
   }
   
   element.html(innerstr + linkstr);
+}
+
+function showAndRender(elt) {
+  elt.style("display", "");
+  MathJax.Hub.Queue(["Typeset", MathJax.Hub, elt.id()]);
+  console.log("render");
 }
