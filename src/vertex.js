@@ -44,10 +44,10 @@ class Vertex {
     if (pow(mx - this.x, 2) + pow(my - this.y, 2) < pow(this.r, 2)) {
       //console.log(this.name);
       if (prevelt) {
-        prevelt.style("visibility", "hidden");
+        prevelt.style("display", "none");
       }
       if (this.element) {
-        this.element.style("visibility", "");
+        this.element.style("display", "");
       }
       for (let i = 0; i < rlist.length; i++) {
         rlist[i].highlight(false);
