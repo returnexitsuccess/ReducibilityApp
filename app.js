@@ -9,6 +9,7 @@ const FileStore = require('session-file-store')(session);
 
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
+const bcrypt = require('bcrypt');
 
 const editJsonFile = require('edit-json-file');
 
@@ -76,8 +77,14 @@ var job = schedule.scheduleJob('*/10 * * * *', () => {
 passport.use(new LocalStrategy(
   function (username, password, cb) {
     const user = config.users[0];
-    if (username === user.username && password === user.password) {
-      return cb(null, user);
+    if (username === user.username) {
+      bcrypt.compare(password, user.password, (err, res) => {
+        if (res == true) {
+          return cb(null, user);
+        } else {
+          return cb(null, false);
+        }
+      });
     } else {
       return cb(null, false);
     }
@@ -245,7 +252,15 @@ app.use('/admin/id/:id/', (req, res, next) => {
   //res.send(`Your id is ${req.params.id}`);
   if (req.session.passport) {
     req.session.previewID = req.params.id;
-    return express.static(__dirname + '/previews/' + req.params.id)(req, res, next);
+    fs.readFile(__dirname + '/admin/admin.json', (err, result) => {
+      if (err) logger.error(err);
+      jsonstr = result.slice(result.indexOf('=') + 1);
+      let data = JSON.parse(jsonstr);
+      req.session.new = data.sessionlist.find(x => x.id === req.params.id).new;
+      req.session.save(() => {
+        return express.static(__dirname + '/previews/' + req.params.id)(req, res, next);
+      });
+    });
   } else {
     res.status('403').send("Forbidden");
   }
@@ -410,7 +425,7 @@ app.post('/approve', function (req, res) {
           if (err) logger.error(err);
           let adminjson = JSON.parse(result.slice(7));
           var now = new Date();
-          adminjson.sessionlist.push({ id: req.sessionID, timestamp: `${now.toLocaleString('en-US')}` });
+          adminjson.sessionlist.push({ id: req.sessionID, timestamp: `${now.toLocaleString('en-US')}`, new: req.session.new });
           let data = JSON.stringify(adminjson);
           console.log(data);
           fs.writeFile(__dirname + '/admin/admin.json', 'data = ' + data, (err) => {
@@ -492,7 +507,6 @@ function createEquivObject(fields, name) {
 }
 
 function createReducObject(fields, name, equivlist) {
-  console.log(fields);
   obj = {};
   for (var i = 0; i < equivlist.length; i++) {
     if (equivlist[i].id === fields.upperselect) {
