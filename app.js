@@ -279,7 +279,13 @@ app.post('/submit/type/:type/', function (req, res) {
         let newid = files.uploadedfile.name.slice(0, files.uploadedfile.name.indexOf('.'));
         for (let i = 0; i < data.equiv.length; i++) {
           if (data.equiv[i].id === newid) {
-            res.send(`Error: The file ${files.uploadedfile.name} already exists`);
+            if (!req.session.passport) {
+              res.send(`Error: The file ${files.uploadedfile.name} already exists`);
+            } else {
+              fs.unlink(__dirname + '/site/equiv/' + newid + '.html', (err) => {
+                if (err) logger.error(err);
+              });
+            }
           }
         }
         
@@ -340,7 +346,13 @@ app.post('/submit/type/:type/', function (req, res) {
         let newid = fields.upperselect + '-' + fields.lowerselect;
         for (let i = 0; i < data.reduc.length; i++) {
           if (data.reduc[i].id === newid) {
-            res.send(`Error: The file ${files.uploadedfile.name} already exists`);
+            if (!req.session.passport) {
+              res.send(`Error: The file ${files.uploadedfile.name} already exists`);
+            } else {
+              fs.unlink(__dirname + '/site/reduc/' + newid + '.html', (err) => {
+                if (err) logger.error(err);
+              });
+            }
           }
         }
         
