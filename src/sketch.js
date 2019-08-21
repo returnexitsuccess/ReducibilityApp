@@ -68,10 +68,10 @@ function setup() {
         addHTMLCats(element, cat);
       }
     }
-    element.changed((a) => {
-      console.log("change");
-      console.log(a);
-    });
+    // element.changed((a) => {
+    //   console.log("change");
+    //   console.log(a);
+    // });
   }
   
   for (let i = 0; i < data.reduc.length; i++) {

@@ -4,7 +4,7 @@
   <script type="text/javascript">
     let loaded = false;
   </script>
-  <script type="text/javascript" src="/preview/data.json" onload="() => {loaded=true;}"></script>
+  <script type="text/javascript" src="../preview/data.json" onload="() => {loaded=true;}"></script>
   <script type="text/javascript">
     function validate(elt) {
       var regex = /^(?:[\w]\:|\\)(\\[a-z\-]+)+\.tex$/;
@@ -22,7 +22,7 @@
         var js = document.createElement("script");
 
         js.type = "text/javascript";
-        js.src = "/data.json";
+        js.src = "../data.json";
         js.addEventListener('load', function() {
           var upper = document.getElementById('upperselect');
           var lower = document.getElementById('lowerselect');
@@ -46,8 +46,8 @@
 
 <body>
   <h1>Reduction Submission</h1>
-  <form action="/submit/type/reduc/" method="post" enctype="multipart/form-data">
-    <p> Please upload your .tex file following the template found <a href="/reductemplate.tex">here</a>.</p>
+  <form action="../submit/type/reduc/" method="post" enctype="multipart/form-data">
+    <p> Please upload your .tex file following the template found <a href="../reductemplate.tex">here</a>.</p>
     <input type="file" name="uploadedfile" onchange="validate(this)" required><br>
 
     Upper Equivalence Relation<br>

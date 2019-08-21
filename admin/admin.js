@@ -32,7 +32,7 @@ window.onload = function () {
           if (col[j] !== 'id') {
             tabCell.innerHTML = celldata;
           } else {
-            tabCell.innerHTML = `<a href="/admin/id/${celldata}/">${celldata}</a>`;
+            tabCell.innerHTML = `<a href="id/${celldata}/">${celldata}</a>`;
           }
       }
   }
