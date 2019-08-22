@@ -126,89 +126,95 @@ app.use((req, res, next) => {
 
 // Previewing changes to site
 app.use('/preview', (req, res, next) => {
-  //console.log(req.session.submitted);
-  if (req.session.submitted == true && req.session.preview == true) {
-    return express.static(__dirname + '/previews/' + req.sessionID)(req, res, next);
-  } else if (req.session.submitted == true && req.session.preview == false) {
-    if (req.session.type === 'equiv') {
-      var basepath = 'previews/' + req.sessionID;
-      let prog;
-      if (process.platform === "win32") {
-        prog = 'python';
-      } else {
-        prog = 'python3';
-      }
-      while (prog === undefined) {
-        setTimeout(() => {}, 50);
-      }
-      const child = spawn(prog, ['convert.py', basepath + '/equivtex/', basepath + '/equiv/']);
-      child.stderr.setEncoding('utf8');
-      child.stderr.on('data', result => {
-        //console.log('stderr:' + result)
-      });
-      child.on('exit', code => {
-        //console.log(`Exited with ${code}`);
-        obj = createEquivObject(req.session.fields, req.session.filename);
-        fs.readFile(__dirname + '/previews/' + req.sessionID + '/data.json', (err, data) => {
-          if (err) logger.error(err);
-          jsonstr = data.slice(data.indexOf('=') + 1);
-          let json = JSON.parse(jsonstr);
-          json.equiv.push(obj);
-          fs.writeFile(__dirname + '/previews/' + req.sessionID + '/data.json', "data = " + JSON.stringify(json), (err) => {
-            if (err) logger.error(err);
-            req.session.preview = true;
-            while (req.session.submitted !== true || req.session.preview !== true) {
-              setTimeout(() => {}, 100);
-            }
-            res.redirect('/preview');
-            
-            next();
-          });
-        });
-      });
-    } else if (req.session.type === 'reduc') {
-      var basepath = 'previews/' + req.sessionID;
-      let prog;
-      if (process.platform === "win32") {
-        prog = 'python';
-      } else {
-        prog = 'python3';
-      }
-      while (prog === undefined) {
-        setTimeout(() => {}, 50);
-      }
-      const child = spawn(prog, ['convert.py', basepath + '/reductex/', basepath + '/reduc/']);
-      child.stderr.setEncoding('utf8');
-      child.stderr.on('data', result => {
-        //console.log('stderr:' + result)
-      });
-      child.on('exit', code => {
-        //console.log(`Exited with ${code}`);
-        
-        fs.readFile(__dirname + '/previews/' + req.sessionID + '/data.json', (err, data) => {
-          if (err) logger.error(err);
-          jsonstr = data.slice(data.indexOf('=') + 1);
-          let json = JSON.parse(jsonstr);
-          
-          obj = createReducObject(req.session.fields, req.session.filename, json.equiv);
-          
-          json.reduc.push(obj);
-          fs.writeFile(__dirname + '/previews/' + req.sessionID + '/data.json', "data = " + JSON.stringify(json), (err) => {
-            if (err) logger.error(err);
-            req.session.preview = true;
-            while (req.session.submitted !== true || req.session.preview !== true) {
-              setTimeout(() => {}, 100);
-            }
-            res.redirect('/preview');
-            
-            next();
-          });
-        });
-      });
-    }
+  if (req.url.endsWith('/submit')) {
+    res.redirect('/submit');
+  } else if (req.url.endsWith('/approve')) {
+    res.redirect('/approve');
   } else {
-    res.redirect('/');
-    next();
+    //console.log(req.session.submitted);
+    if (req.session.submitted == true && req.session.preview == true) {
+      return express.static(__dirname + '/previews/' + req.sessionID)(req, res, next);
+    } else if (req.session.submitted == true && req.session.preview == false) {
+      if (req.session.type === 'equiv') {
+        var basepath = 'previews/' + req.sessionID;
+        let prog;
+        if (process.platform === "win32") {
+          prog = 'python';
+        } else {
+          prog = 'python3';
+        }
+        while (prog === undefined) {
+          setTimeout(() => {}, 50);
+        }
+        const child = spawn(prog, ['convert.py', basepath + '/equivtex/', basepath + '/equiv/']);
+        child.stderr.setEncoding('utf8');
+        child.stderr.on('data', result => {
+          //console.log('stderr:' + result)
+        });
+        child.on('exit', code => {
+          //console.log(`Exited with ${code}`);
+          obj = createEquivObject(req.session.fields, req.session.filename);
+          fs.readFile(__dirname + '/previews/' + req.sessionID + '/data.json', (err, data) => {
+            if (err) logger.error(err);
+            jsonstr = data.slice(data.indexOf('=') + 1);
+            let json = JSON.parse(jsonstr);
+            json.equiv.push(obj);
+            fs.writeFile(__dirname + '/previews/' + req.sessionID + '/data.json', "data = " + JSON.stringify(json), (err) => {
+              if (err) logger.error(err);
+              req.session.preview = true;
+              while (req.session.submitted !== true || req.session.preview !== true) {
+                setTimeout(() => {}, 100);
+              }
+              res.redirect('/preview');
+              
+              next();
+            });
+          });
+        });
+      } else if (req.session.type === 'reduc') {
+        var basepath = 'previews/' + req.sessionID;
+        let prog;
+        if (process.platform === "win32") {
+          prog = 'python';
+        } else {
+          prog = 'python3';
+        }
+        while (prog === undefined) {
+          setTimeout(() => {}, 50);
+        }
+        const child = spawn(prog, ['convert.py', basepath + '/reductex/', basepath + '/reduc/']);
+        child.stderr.setEncoding('utf8');
+        child.stderr.on('data', result => {
+          //console.log('stderr:' + result)
+        });
+        child.on('exit', code => {
+          //console.log(`Exited with ${code}`);
+          
+          fs.readFile(__dirname + '/previews/' + req.sessionID + '/data.json', (err, data) => {
+            if (err) logger.error(err);
+            jsonstr = data.slice(data.indexOf('=') + 1);
+            let json = JSON.parse(jsonstr);
+            
+            obj = createReducObject(req.session.fields, req.session.filename, json.equiv);
+            
+            json.reduc.push(obj);
+            fs.writeFile(__dirname + '/previews/' + req.sessionID + '/data.json', "data = " + JSON.stringify(json), (err) => {
+              if (err) logger.error(err);
+              req.session.preview = true;
+              while (req.session.submitted !== true || req.session.preview !== true) {
+                setTimeout(() => {}, 100);
+              }
+              res.redirect('/preview');
+              
+              next();
+            });
+          });
+        });
+      }
+    } else {
+      res.redirect('/');
+      next();
+    }
   }
 });
 
@@ -249,20 +255,26 @@ app.use('/admin/', (req, res, next) => {
 });
 
 app.use('/admin/id/:id/', (req, res, next) => {
-  //res.send(`Your id is ${req.params.id}`);
-  if (req.session.passport) {
-    req.session.previewID = req.params.id;
-    fs.readFile(__dirname + '/admin/admin.json', (err, result) => {
-      if (err) logger.error(err);
-      jsonstr = result.slice(result.indexOf('=') + 1);
-      let data = JSON.parse(jsonstr);
-      req.session.new = data.sessionlist.find(x => x.id === req.params.id).new;
-      req.session.save(() => {
-        return express.static(__dirname + '/previews/' + req.params.id)(req, res, next);
-      });
-    });
+  if (req.url.endsWith('/submit')) {
+    res.redirect('/submit');
+  } else if (req.url.endsWith('/approve')) {
+    res.redirect('/approve');
   } else {
-    res.status('403').send("Forbidden");
+    //res.send(`Your id is ${req.params.id}`);
+    if (req.session.passport) {
+      req.session.previewID = req.params.id;
+      fs.readFile(__dirname + '/admin/admin.json', (err, result) => {
+        if (err) logger.error(err);
+        jsonstr = result.slice(result.indexOf('=') + 1);
+        let data = JSON.parse(jsonstr);
+        req.session.new = data.sessionlist.find(x => x.id === req.params.id).new;
+        req.session.save(() => {
+          return express.static(__dirname + '/previews/' + req.params.id)(req, res, next);
+        });
+      });
+    } else {
+      res.status('403').send("Forbidden");
+    }
   }
 })
 
