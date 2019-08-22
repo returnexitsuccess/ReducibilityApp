@@ -93,3 +93,8 @@ previews/
 savedSessions.txt
 admin.json
 config.js
+
+site/equiv/
+site/equivtex/
+site/reduc/
+site/reductex/
