@@ -127,9 +127,9 @@ app.use((req, res, next) => {
 // Previewing changes to site
 app.use('/preview', (req, res, next) => {
   if (req.url.endsWith('/submit')) {
-    res.redirect('/submit');
+    res.redirect(307, req.baseUrl + '/../submit');
   } else if (req.url.endsWith('/approve')) {
-    res.redirect('/approve');
+    res.redirect(307, req.baseUrl + '/../approve');
   } else {
     //console.log(req.session.submitted);
     if (req.session.submitted == true && req.session.preview == true) {
@@ -154,6 +154,13 @@ app.use('/preview', (req, res, next) => {
         child.on('exit', code => {
           //console.log(`Exited with ${code}`);
           obj = createEquivObject(req.session.fields, req.session.filename);
+          
+          if (!req.session.hasOwnProperty('equivdata')) {
+            req.session.equivdata = [obj];
+          } else {
+            req.session.equivdata.push(obj);
+          }
+          
           fs.readFile(__dirname + '/previews/' + req.sessionID + '/data.json', (err, data) => {
             if (err) logger.error(err);
             jsonstr = data.slice(data.indexOf('=') + 1);
@@ -165,7 +172,7 @@ app.use('/preview', (req, res, next) => {
               while (req.session.submitted !== true || req.session.preview !== true) {
                 setTimeout(() => {}, 100);
               }
-              res.redirect('/preview');
+              res.redirect(req.baseUrl + '/../preview');
               
               next();
             });
@@ -197,6 +204,12 @@ app.use('/preview', (req, res, next) => {
             
             obj = createReducObject(req.session.fields, req.session.filename, json.equiv);
             
+            if (!req.session.hasOwnProperty('reducdata')) {
+              req.session.reducdata = [obj];
+            } else {
+              req.session.reducdata.push(obj);
+            }
+            
             json.reduc.push(obj);
             fs.writeFile(__dirname + '/previews/' + req.sessionID + '/data.json', "data = " + JSON.stringify(json), (err) => {
               if (err) logger.error(err);
@@ -204,7 +217,7 @@ app.use('/preview', (req, res, next) => {
               while (req.session.submitted !== true || req.session.preview !== true) {
                 setTimeout(() => {}, 100);
               }
-              res.redirect('/preview');
+              res.redirect(req.baseUrl + '/../preview');
               
               next();
             });
@@ -212,7 +225,7 @@ app.use('/preview', (req, res, next) => {
         });
       }
     } else {
-      res.redirect('/');
+      res.redirect(req.baseUrl + '/../');
       next();
     }
   }
@@ -233,18 +246,20 @@ app.get('/login', (req, res) => {
   res.end();
 });
 
-app.post('/login',
-  passport.authenticate('local', { failureRedirect: '/login' }),
-  function(req, res) {
-    req.session.save(() => {
-      res.redirect('/admin/');
+app.post('/login', function(req, res, next) {
+  passport.authenticate('local', function(err, user, info) {
+    if (err) { return next(err); }
+    if (!user) { return res.redirect(req.baseUrl + '/../login'); }
+    req.logIn(user, function(err) {
+      if (err) { return next(err); }
+      return res.redirect(req.baseUrl + '/../admin');
     });
-  }
-);
+  })(req, res, next);
+});
 
 app.use('/admin/', (req, res, next) => {
   if (req.url.endsWith('/admin')) {
-    res.redirect(301, '/admin/');
+    res.redirect(301, req.baseUrl + '/../admin/');
   }
   
   if (req.session.passport) {
@@ -256,9 +271,9 @@ app.use('/admin/', (req, res, next) => {
 
 app.use('/admin/id/:id/', (req, res, next) => {
   if (req.url.endsWith('/submit')) {
-    res.redirect('/submit');
+    res.redirect(307, req.baseUrl + '/../../../submit');
   } else if (req.url.endsWith('/approve')) {
-    res.redirect('/approve');
+    res.redirect(307, req.baseUrl + '/../../../approve');
   } else {
     //res.send(`Your id is ${req.params.id}`);
     if (req.session.passport) {
@@ -267,7 +282,7 @@ app.use('/admin/id/:id/', (req, res, next) => {
         if (err) logger.error(err);
         jsonstr = result.slice(result.indexOf('=') + 1);
         let data = JSON.parse(jsonstr);
-        req.session.new = data.sessionlist.find(x => x.id === req.params.id).new;
+        req.session.previewObj = data.sessionlist.find(x => x.id === req.params.id);
         req.session.save(() => {
           return express.static(__dirname + '/previews/' + req.params.id)(req, res, next);
         });
@@ -276,7 +291,64 @@ app.use('/admin/id/:id/', (req, res, next) => {
       res.status('403').send("Forbidden");
     }
   }
-})
+});
+
+app.use('/admin/delete/id/:id/', (req, res, next) => {
+  if (req.session.passport) {
+    if (req.method == "POST") {
+      // Confirmed deletion
+      if (req.params.id.includes('-')) {
+        // Reduction
+        fs.unlink(__dirname + '/site/reductex/' + req.params.id + '.tex', (err) => {
+          if (err) logger.error(err);
+          fs.unlink(__dirname + '/site/reduc/' + req.params.id + '.html', (err) => {
+            if (err) logger.error(err);
+            fs.readFile(__dirname + '/site/data.json', (err, result) => {
+              if (err) logger.error(err);
+              jsonstr = result.slice(result.indexOf('=') + 1);
+              let data = JSON.parse(jsonstr);
+              var removeIndex = data.reduc.map(function(item) { return item.id; }).indexOf(req.params.id);
+              ~removeIndex && data.reduc.splice(removeIndex, 1);
+              fs.writeFile(__dirname + '/site/data.json', "data = " + JSON.stringify(data), (err) => {
+                if (err) logger.error(err);
+                res.redirect(req.originalUrl + '/../..');
+              });
+            });
+          });
+        });
+      } else {
+        // Equivalence
+        fs.unlink(__dirname + '/site/equivtex/' + req.params.id + '.tex', (err) => {
+          if (err) logger.error(err);
+          fs.unlink(__dirname + '/site/equiv/' + req.params.id + '.html', (err) => {
+            if (err) logger.error(err);
+            fs.readFile(__dirname + '/site/data.json', (err, result) => {
+              if (err) logger.error(err);
+              jsonstr = result.slice(result.indexOf('=') + 1);
+              let data = JSON.parse(jsonstr);
+              var removeIndex = data.equiv.map(function(item) { return item.id; }).indexOf(req.params.id);
+              ~removeIndex && data.equiv.splice(removeIndex, 1);
+              fs.writeFile(__dirname + '/site/data.json', "data = " + JSON.stringify(data), (err) => {
+                if (err) logger.error(err);
+                res.redirect(req.originalUrl + '/../..');
+              });
+            });
+          });
+        });
+      }
+    } else if (req.method == "GET") {
+      // Send confirmation of deletion
+      res.write('<html><head><style>div {\nmargin: auto;\ntext-align: center\n}</style></head>');
+      res.write(`<body><div>Are you sure you want to delete ${req.params.id}?</div>`);
+      res.write('<form action="" method="post" id="delete" enctype="multipart/form-data">');
+      res.write('<div><button onclick="location.href=\'../..\'">Cancel</button>');
+      res.write('<button type="submit" form="delete" value="Delete">Delete</button></div></body>');
+      res.end();
+    }
+  } else {
+    res.status('403').send("Forbidden");
+  }
+});
 
 // Submitting file
 app.post('/submit/type/:type/', function (req, res) {
@@ -324,7 +396,7 @@ app.post('/submit/type/:type/', function (req, res) {
                   req.session.submitted = true;
                   req.session.preview = false;
                   req.session.save(() => {
-                    res.redirect('/preview');
+                    res.redirect(req.baseUrl + '/../../../preview');
                   });
                 });
               });
@@ -341,7 +413,7 @@ app.post('/submit/type/:type/', function (req, res) {
               req.session.submitted = true;
               req.session.preview = false;
               req.session.save(() => {
-                res.redirect('/preview');
+                res.redirect(req.baseUrl + '/../../../preview');
               });
             });
           }
@@ -391,7 +463,7 @@ app.post('/submit/type/:type/', function (req, res) {
                   req.session.submitted = true;
                   req.session.preview = false;
                   req.session.save(() => {
-                    res.redirect('/preview');
+                    res.redirect(req.baseUrl + '/../../../preview');
                   });
                 });
               });
@@ -408,7 +480,7 @@ app.post('/submit/type/:type/', function (req, res) {
               req.session.submitted = true;
               req.session.preview = false;
               req.session.save(() => {
-                res.redirect('/preview');
+                res.redirect(req.baseUrl + '/../../../preview');
               });
             });
           }
@@ -420,24 +492,45 @@ app.post('/submit/type/:type/', function (req, res) {
 
 app.post('/approve', function (req, res) {
   if (req.session.passport) {
+    let id;
     if (req.session.hasOwnProperty('previewID')) {
-      let id = req.session.previewID;
+      id = req.session.previewID;
     } else {
-      let id = req.sessionID;
+      id = req.sessionID;
     }
-    let texpromises = req.session.new.map(obj => {
+    while (!id) {
+      setTimeout(() => {}, 100);
+    }
+    let texpromises = req.session.previewObj.new.map(obj => {
       const source = __dirname + '/previews/' + id + '/' + obj.type + 'tex/' + obj.id + '.tex';
       const destination = __dirname + '/site/' + obj.type + 'tex/' + obj.id + '.tex';
       return copyFilePromise(source, destination);
     });
-    let htmlpromises = req.session.new.map(obj => {
+    let htmlpromises = req.session.previewObj.new.map(obj => {
       const source = __dirname + '/previews/' + id + '/' + obj.type + '/' + obj.id + '.html';
       const destination = __dirname + '/site/' + obj.type + '/' + obj.id + '.html';
       return copyFilePromise(source, destination);
     });
     const promises = texpromises.concat(htmlpromises);
     Promise.all(promises).then(() => {
-      logger.info('updated site with ' + req.session.new.map(obj => obj.id).toString());
+      fs.readFile(__dirname + '/site/data.json', (err, result) => {
+        if (err) logger.error(err);
+        jsonstr = result.slice(result.indexOf('=') + 1);
+        let data = JSON.parse(jsonstr);
+        if (req.session.previewObj.equivdata) {
+          data.equiv = data.equiv.concat(req.session.previewObj.equivdata);
+        }
+        if (req.session.previewOnj.reducdata) {
+          data.reduc = data.reduc.concat(req.session.previewObj.reducdata);
+        }
+        fs.writeFile(__dirname + '/site/data.json', 'data = ' + JSON.stringify(data), (err) => {
+          if (err) logger.error(err);
+          fs.unlink(__dirname + '/previews/' + id + '/saved.txt', (err) => {
+            if (err) logger.error(err);
+            logger.info('updated site with ' + req.session.previewObj.new.map(obj => obj.id).toString());
+          });
+        });
+      });
     }).catch((err) => {
       logger.error(err);
     });
@@ -449,20 +542,20 @@ app.post('/approve', function (req, res) {
           if (err) logger.error(err);
           let adminjson = JSON.parse(result.slice(7));
           var now = new Date();
-          adminjson.sessionlist.push({ id: req.sessionID, timestamp: `${now.toLocaleString('en-US')}`, new: req.session.new });
+          adminjson.sessionlist.push({ id: req.sessionID, timestamp: `${now.toLocaleString('en-US')}`, new: req.session.new, equivdata: req.session.equivdata, reducdata: req.session.reducdata });
           let data = JSON.stringify(adminjson);
           console.log(data);
           fs.writeFile(__dirname + '/admin/admin.json', 'data = ' + data, (err) => {
             if (err) logger.error(err);
             fs.unlink(__dirname + '/sessions/' + req.sessionID + '.json', (err) => {
               if (err) logger.error(err);
-                res.redirect('/');
+                res.redirect(req.baseUrl + '/../');
             });
           });
         });
       });
     } else {
-      res.redirect('/');
+      res.redirect(req.baseUrl + '/../');
     }
   }
 });
