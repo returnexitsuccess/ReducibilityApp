@@ -528,6 +528,7 @@ app.post('/approve', function (req, res) {
           fs.unlink(__dirname + '/previews/' + id + '/saved.txt', (err) => {
             if (err) logger.error(err);
             logger.info('updated site with ' + req.session.previewObj.new.map(obj => obj.id).toString());
+            res.redirect(req.baseUrl + '/../');
           });
         });
       });
