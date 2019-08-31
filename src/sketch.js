@@ -398,7 +398,12 @@ function addHTMLReducs(up, lo, vertices, id) {
   vertices[lo].element.html(result);
   
   eltstring = vertices[up].element.html();
-  i = eltstring.indexOf("</h2>", eltstring.indexOf('id="reducible-from"')) + 5;
+  if (eltstring.indexOf('id="reducible-from"') > -1) {
+    // legacy
+    i = eltstring.indexOf("</h2>", eltstring.indexOf('id="reducible-from"')) + 5;
+  } else {
+    i = eltstring.indexOf("</h2>", eltstring.indexOf('id="equivalence-relations-reducible-to')) + 5;
+  }
   linkstr = '<p><a href="./?id=' + id + '">' + vertices[lo].name + '</a></p>\n';
   result = [eltstring.slice(0, i), linkstr, eltstring.slice(i)].join('');
   vertices[up].element.html(result);

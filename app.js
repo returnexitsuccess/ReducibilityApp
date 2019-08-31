@@ -360,11 +360,14 @@ app.post('/submit/type/:type/', function (req, res) {
         if (err) logger.error(err);
         jsonstr = result.slice(result.indexOf('=') + 1);
         let data = JSON.parse(jsonstr);
-        let newid = files.uploadedfile.name.slice(0, files.uploadedfile.name.indexOf('.'));
+        let newid = fields.id.toLowerCase();
+        if (!/^[a-z]+$/.test(fields.id.toLowerCase())) {
+          res.send(`Error: the id ${fields.id.toLowerCase()} must only contain lowercase letters`);
+        }
         for (let i = 0; i < data.equiv.length; i++) {
           if (data.equiv[i].id === newid) {
             if (!req.session.passport) {
-              res.send(`Error: The file ${files.uploadedfile.name} already exists`);
+              res.send(`Error: The id ${newid} already exists`);
             } else {
               fs.unlink(__dirname + '/site/equiv/' + newid + '.html', (err) => {
                 if (err) logger.error(err);
@@ -376,8 +379,7 @@ app.post('/submit/type/:type/', function (req, res) {
         req.session.submitted = true;
         req.session.preview = false;
         
-        let oldpath = files.uploadedfile.path;
-        let newpath = __dirname + '/previews/' + req.sessionID + '/equivtex/' + files.uploadedfile.name;
+        let newpath = __dirname + '/previews/' + req.sessionID + '/equivtex/' + newid + '.tex';
         ensureExists(__dirname + '/previews/' + req.sessionID, 0777, function (err, exists) {
           if (err) logger.error(err);
           if (!exists) {
@@ -385,12 +387,20 @@ app.post('/submit/type/:type/', function (req, res) {
               if (err) logger.error(err);
               fs.copyFile(__dirname + '/preview.css', __dirname + '/previews/' + req.sessionID + '/index.css', function (err) {
                 if (err) logger.error(err);
-                fs.copyFile(oldpath, newpath, function (err) {
+                let equivtemplate = '\\documentclass{article}\n';
+                equivtemplate += '\\begin{document}\n'
+                equivtemplate += `\\section{${fields.name}}\n`;
+                equivtemplate += '\\subsection{Definition}\n';
+                equivtemplate += fields.defn + '\n';
+                equivtemplate += '\\subsection{History and Background}\n';
+                equivtemplate += fields.history + '\n';
+                equivtemplate += '\\subsection{Reducible to}\n';
+                equivtemplate += `\\subsection{Equivalence Relations Reducible to ${fields.name}}\n`;
+                equivtemplate += `\\subsection{Categories}\n`;
+                equivtemplate += `\\end{document}`;
+                fs.writeFile(newpath, equivtemplate, function (err) {
                   if (err) logger.error(err);
-                  fs.unlink(oldpath, function (err) {
-                    if (err) logger.error(err);
-                  });
-                  req.session.filename = files.uploadedfile.name;
+                  req.session.filename = newid + '.tex';
                   req.session.fields = fields;
                   req.session.new = [{ type: 'equiv', id: newid }];
                   req.session.submitted = true;
@@ -402,12 +412,20 @@ app.post('/submit/type/:type/', function (req, res) {
               });
             });
           } else {
-            fs.copyFile(oldpath, newpath, function (err) {
+            let equivtemplate = '\\documentclass{article}\n';
+            equivtemplate += '\\begin{document}\n'
+            equivtemplate += `\\section{${fields.name}}\n`;
+            equivtemplate += '\\subsection{Definition}\n';
+            equivtemplate += fields.defn + '\n';
+            equivtemplate += '\\subsection{History and Background}\n';
+            equivtemplate += fields.history + '\n';
+            equivtemplate += '\\subsection{Reducible to}\n';
+            equivtemplate += `\\subsection{Equivalence Relations Reducible to ${fields.name}}\n`;
+            equivtemplate += `\\subsection{Categories}\n`;
+            equivtemplate += `\\end{document}`;
+            fs.writeFile(newpath, equivtemplate, function (err) {
               if (err) logger.error(err);
-              fs.unlink(oldpath, function (err) {
-                if (err) logger.error(err);
-              });
-              req.session.filename = files.uploadedfile.name;
+              req.session.filename = newid + '.tex';
               req.session.fields = fields;
               req.session.new.push({ type: 'equiv', id: newid });
               req.session.submitted = true;
@@ -520,7 +538,7 @@ app.post('/approve', function (req, res) {
         if (req.session.previewObj.equivdata) {
           data.equiv = data.equiv.concat(req.session.previewObj.equivdata);
         }
-        if (req.session.previewOnj.reducdata) {
+        if (req.session.previewObj.reducdata) {
           data.reduc = data.reduc.concat(req.session.previewObj.reducdata);
         }
         fs.writeFile(__dirname + '/site/data.json', 'data = ' + JSON.stringify(data), (err) => {
