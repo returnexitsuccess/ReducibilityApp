@@ -15,7 +15,7 @@ texfiles = [f for f in listdir(TEXPATH) if isfile(join(TEXPATH, f)) and f[-4:] =
 for f in texfiles:
     fhtml = f[0:-3] + "html"
     if fhtml not in listdir(HTMLPATH):
-        subprocess.run(["pandoc", TEXPATH + f, "-s", "--mathjax", "-o", HTMLPATH + fhtml])
+        subprocess.run(["pandoc", TEXPATH + f, "-s", "--mathjax", "-o", HTMLPATH + fhtml]).check_returncode()
         print(fhtml + " written")
     else:
         print(fhtml + " already exists")

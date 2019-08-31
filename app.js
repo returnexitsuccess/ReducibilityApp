@@ -152,31 +152,37 @@ app.use('/preview', (req, res, next) => {
           //console.log('stderr:' + result)
         });
         child.on('exit', code => {
-          //console.log(`Exited with ${code}`);
-          obj = createEquivObject(req.session.fields, req.session.filename);
-          
-          if (!req.session.hasOwnProperty('equivdata')) {
-            req.session.equivdata = [obj];
-          } else {
-            req.session.equivdata.push(obj);
-          }
-          
-          fs.readFile(__dirname + '/previews/' + req.sessionID + '/data.json', (err, data) => {
-            if (err) logger.error(err);
-            jsonstr = data.slice(data.indexOf('=') + 1);
-            let json = JSON.parse(jsonstr);
-            json.equiv.push(obj);
-            fs.writeFile(__dirname + '/previews/' + req.sessionID + '/data.json', "data = " + JSON.stringify(json), (err) => {
+          if (code != 0) {
+            fs.unlink(__dirname + '/sessions/' + req.sessionID + '.json', (err) => {
               if (err) logger.error(err);
-              req.session.preview = true;
-              while (req.session.submitted !== true || req.session.preview !== true) {
-                setTimeout(() => {}, 100);
-              }
-              res.redirect(req.baseUrl + '/../preview');
-              
-              next();
+              res.send(`Exited with code ${code}, tex failed to compile`);
             });
-          });
+          } else {
+            obj = createEquivObject(req.session.fields, req.session.filename);
+            
+            if (!req.session.hasOwnProperty('equivdata')) {
+              req.session.equivdata = [obj];
+            } else {
+              req.session.equivdata.push(obj);
+            }
+            
+            fs.readFile(__dirname + '/previews/' + req.sessionID + '/data.json', (err, data) => {
+              if (err) logger.error(err);
+              jsonstr = data.slice(data.indexOf('=') + 1);
+              let json = JSON.parse(jsonstr);
+              json.equiv.push(obj);
+              fs.writeFile(__dirname + '/previews/' + req.sessionID + '/data.json', "data = " + JSON.stringify(json), (err) => {
+                if (err) logger.error(err);
+                req.session.preview = true;
+                while (req.session.submitted !== true || req.session.preview !== true) {
+                  setTimeout(() => {}, 100);
+                }
+                res.redirect(req.baseUrl + '/../preview');
+                
+                next();
+              });
+            });
+          }
         });
       } else if (req.session.type === 'reduc') {
         var basepath = 'previews/' + req.sessionID;
@@ -311,7 +317,7 @@ app.use('/admin/delete/id/:id/', (req, res, next) => {
               ~removeIndex && data.reduc.splice(removeIndex, 1);
               fs.writeFile(__dirname + '/site/data.json', "data = " + JSON.stringify(data), (err) => {
                 if (err) logger.error(err);
-                res.redirect(req.originalUrl + '/../..');
+                res.redirect(req.originalUrl + '/../../..');
               });
             });
           });
