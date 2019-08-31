@@ -258,7 +258,9 @@ app.post('/login', function(req, res, next) {
     if (!user) { return res.redirect(req.baseUrl + '/../login'); }
     req.logIn(user, function(err) {
       if (err) { return next(err); }
-      return res.redirect(req.baseUrl + '/../admin');
+      req.session.save(() => {
+        return res.redirect(req.baseUrl + '/../admin');
+      });
     });
   })(req, res, next);
 });
@@ -296,6 +298,28 @@ app.use('/admin/id/:id/', (req, res, next) => {
     } else {
       res.status('403').send("Forbidden");
     }
+  }
+});
+
+app.get('/admin/del/id/:id/', (req, res) => {
+  if (req.session.passport) {
+    // delete entry from admin.json
+    fs.readFile(__dirname + '/admin/admin.json', (err, result) => {
+      if (err) logger.error(err);
+      jsonstr = result.slice(result.indexOf('=') + 1);
+      let data = JSON.parse(jsonstr);
+      data.sessionlist = data.sessionlist.filter(x => x.id !== req.params.id);
+      fs.writeFile(__dirname + '/admin/admin.json', 'data = ' + JSON.stringify(data), (err) => {
+        if (err) logger.error(err);
+        // delete saved.txt
+        fs.unlink(__dirname + '/previews/' + req.params.id + '/saved.txt', (err) => {
+          if (err) logger.error(err);
+          res.redirect(req.baseUrl + '/..');
+        })
+      })
+    });
+  } else {
+    res.status('403').send('Forbidden');
   }
 });
 
