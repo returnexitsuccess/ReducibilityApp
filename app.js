@@ -575,8 +575,17 @@ app.post('/approve', function (req, res) {
           if (err) logger.error(err);
           fs.unlink(__dirname + '/previews/' + id + '/saved.txt', (err) => {
             if (err) logger.error(err);
-            logger.info('updated site with ' + req.session.previewObj.new.map(obj => obj.id).toString());
-            res.redirect(req.baseUrl + '/../');
+            fs.readFile(__dirname + '/admin/admin.json', (err, result) => {
+              if (err) logger.error(err);
+              jsonstr = result.slice(result.indexOf('=') + 1);
+              let data = JSON.parse(jsonstr);
+              data.sessionlist = data.sessionlist.filter(x => x.id !== id);
+              fs.writeFile(__dirname + '/admin/admin.json', 'data = ' + JSON.stringify(data), (err) => {
+                if (err) logger.error(err);
+                logger.info('updated site with ' + req.session.previewObj.new.map(obj => obj.id).toString());
+                res.redirect(req.baseUrl + '/../');
+              });
+            });
           });
         });
       });
