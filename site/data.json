@@ -1,1 +1,88 @@
-data = {"equiv":[{"name":"Isomorphism for countable graphs","label":"Iso countable graphs","categories":["polish","sinf"],"labeloffset":[0,0],"pos":[725,652],"id":"countgraphs"},{"name":"Isomorphism for ergodic diffeomorphisms","label":"Iso ergodic diff","categories":["polish"],"labeloffset":[0,0],"pos":[902,539],"id":"ergdiff"},{"name":"Isomorphism for ergodic measure preserving transformations","label":"Iso ergodic meas preserving","categories":["polish"],"labeloffset":[0,0],"pos":[804,393],"id":"ergmeas"},{"name":"Unitary conjugacy of normal operators","label":"Unitary conj normal ops","categories":["polish","borel"],"labeloffset":[-120,30],"pos":[512,528],"id":"unitaryconj"},{"name":"Maximal unitary group action","label":"Max unitary action","categories":["polish"],"labeloffset":[0,0],"pos":[846,300],"id":"maxuniaction"},{"name":"Maximal l1-action","label":"Max l1 action","categories":["polish"],"labeloffset":[0,0],"pos":[1061,539],"id":"maxl1action"},{"name":"Abelian Polish group actions","label":"Ab Polish actions","categories":["polish"],"labeloffset":[0,0],"pos":[1061,650],"id":"abpolishactions"}],"reduc":[{"upperlabel":"Iso ergodic diff","lowerlabel":"Iso countable graphs","edgetype":"solid","id":"ergdiff-countgraphs","countable":false},{"upperlabel":"Iso ergodic meas preserving","lowerlabel":"Iso countable graphs","edgetype":"arrow","id":"ergmeas-countgraphs","countable":false},{"upperlabel":"Iso ergodic meas preserving","lowerlabel":"Iso ergodic diff","edgetype":"solid","id":"ergmeas-ergdiff","countable":false},{"upperlabel":"Iso ergodic meas preserving","lowerlabel":"Unitary conj normal ops","edgetype":"arrow","id":"ergmeas-unitaryconj","countable":false},{"upperlabel":"Max unitary action","lowerlabel":"Iso ergodic meas preserving","edgetype":"solid","id":"maxuniaction-ergmeas","countable":false},{"upperlabel":"Max unitary action","lowerlabel":"Max l1 action","edgetype":"arrow","id":"maxuniaction-maxl1action","countable":false},{"upperlabel":"Max l1 action","lowerlabel":"Ab Polish actions","edgetype":"solid","id":"maxl1action-abpolishactions","countable":false}]}
+data = {
+  "equiv": [{
+    "name": "Isomorphism for countable graphs",
+    "label": "Iso countable graphs",
+    "categories": ["polish", "sinf"],
+    "labeloffset": [0, 0],
+    "pos": [725, 652],
+    "id": "countgraphs"
+  }, {
+    "name": "Isomorphism for ergodic diffeomorphisms",
+    "label": "Iso ergodic diff",
+    "categories": ["polish"],
+    "labeloffset": [0, 0],
+    "pos": [902, 539],
+    "id": "ergdiff"
+  }, {
+    "name": "Unitary conjugacy of normal operators",
+    "label": "Unitary conj normal ops",
+    "categories": ["polish", "borel"],
+    "labeloffset": [-120, 30],
+    "pos": [512, 528],
+    "id": "unitaryconj"
+  }, {
+    "name": "Maximal unitary group action",
+    "label": "Max unitary action",
+    "categories": ["polish"],
+    "labeloffset": [0, 0],
+    "pos": [846, 300],
+    "id": "maxuniaction"
+  }, {
+    "name": "Maximal l1-action",
+    "label": "Max l1 action",
+    "categories": ["polish"],
+    "labeloffset": [0, 0],
+    "pos": [1061, 539],
+    "id": "maxl1action"
+  }, {
+    "name": "Abelian Polish group actions",
+    "label": "Ab Polish actions",
+    "categories": ["polish"],
+    "labeloffset": [0, 0],
+    "pos": [1061, 650],
+    "id": "abpolishactions"
+  }],
+  "reduc": [{
+    "upperlabel": "Iso ergodic diff",
+    "lowerlabel": "Iso countable graphs",
+    "edgetype": "solid",
+    "id": "ergdiff-countgraphs",
+    "countable": false
+  }, {
+    "upperlabel": "Iso ergodic meas preserving",
+    "lowerlabel": "Iso countable graphs",
+    "edgetype": "arrow",
+    "id": "ergmeas-countgraphs",
+    "countable": false
+  }, {
+    "upperlabel": "Iso ergodic meas preserving",
+    "lowerlabel": "Iso ergodic diff",
+    "edgetype": "solid",
+    "id": "ergmeas-ergdiff",
+    "countable": false
+  }, {
+    "upperlabel": "Iso ergodic meas preserving",
+    "lowerlabel": "Unitary conj normal ops",
+    "edgetype": "arrow",
+    "id": "ergmeas-unitaryconj",
+    "countable": false
+  }, {
+    "upperlabel": "Max unitary action",
+    "lowerlabel": "Iso ergodic meas preserving",
+    "edgetype": "solid",
+    "id": "maxuniaction-ergmeas",
+    "countable": false
+  }, {
+    "upperlabel": "Max unitary action",
+    "lowerlabel": "Max l1 action",
+    "edgetype": "arrow",
+    "id": "maxuniaction-maxl1action",
+    "countable": false
+  }, {
+    "upperlabel": "Max l1 action",
+    "lowerlabel": "Ab Polish actions",
+    "edgetype": "solid",
+    "id": "maxl1action-abpolishactions",
+    "countable": false
+  }]
+}
