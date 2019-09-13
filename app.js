@@ -18,6 +18,8 @@ const config = require(__dirname + '/config.js');
 //const router = express.Router();
 const app = express();
 
+const mountUrl = process.env.MOUNT || '/'; // e.g. /~borelreducibility/
+
 const winston = require('winston');
 const logger = winston.createLogger({
   level: 'info',
@@ -127,9 +129,9 @@ app.use((req, res, next) => {
 // Previewing changes to site
 app.use('/preview', (req, res, next) => {
   if (req.url.endsWith('/submit')) {
-    res.redirect(307, '../../../submit');
+    res.redirect(307, mountUrl + 'submit');
   } else if (req.url.endsWith('/approve')) {
-    res.redirect(307, '../../../approve');
+    res.redirect(307, mountUrl + 'approve');
   } else {
     //console.log(req.session.submitted);
     if (req.session.submitted == true && req.session.preview == true) {
@@ -177,7 +179,7 @@ app.use('/preview', (req, res, next) => {
                 while (req.session.submitted !== true || req.session.preview !== true) {
                   setTimeout(() => {}, 100);
                 }
-                res.redirect('../preview');
+                res.redirect(mountUrl + 'preview');
                 
                 next();
               });
@@ -223,7 +225,7 @@ app.use('/preview', (req, res, next) => {
               while (req.session.submitted !== true || req.session.preview !== true) {
                 setTimeout(() => {}, 100);
               }
-              res.redirect('../preview');
+              res.redirect(mountUrl + 'preview');
               
               next();
             });
@@ -231,7 +233,7 @@ app.use('/preview', (req, res, next) => {
         });
       }
     } else {
-      res.redirect('../');
+      res.redirect(mountUrl);
       next();
     }
   }
@@ -255,11 +257,11 @@ app.get('/login', (req, res) => {
 app.post('/login', function(req, res, next) {
   passport.authenticate('local', function(err, user, info) {
     if (err) { return next(err); }
-    if (!user) { return res.redirect('login'); }
+    if (!user) { return res.redirect(mountUrl + 'login'); }
     req.logIn(user, function(err) {
       if (err) { return next(err); }
       req.session.save(() => {
-        return res.redirect('admin');
+        return res.redirect(mountUrl + 'admin');
       });
     });
   })(req, res, next);
@@ -267,7 +269,7 @@ app.post('/login', function(req, res, next) {
 
 app.use('/admin/', (req, res, next) => {
   if (req.url.endsWith('/admin')) {
-    res.redirect(301, 'admin/');
+    res.redirect(307, mountUrl + 'admin/');
   }
   
   if (req.session.passport) {
@@ -279,9 +281,9 @@ app.use('/admin/', (req, res, next) => {
 
 app.use('/admin/id/:id/', (req, res, next) => {
   if (req.url.endsWith('/submit')) {
-    res.redirect(307, '../../../submit');
+    res.redirect(307, mountUrl + 'submit');
   } else if (req.url.endsWith('/approve')) {
-    res.redirect(307, '../../../approve');
+    res.redirect(307, mountUrl + 'approve');
   } else {
     //res.send(`Your id is ${req.params.id}`);
     if (req.session.passport) {
@@ -314,7 +316,7 @@ app.get('/admin/del/id/:id/', (req, res) => {
         // delete saved.txt
         fs.unlink(__dirname + '/previews/' + req.params.id + '/saved.txt', (err) => {
           if (err) logger.error(err);
-          res.redirect('../../../');
+          res.redirect(mountUrl + 'admin/');
         })
       })
     });
@@ -341,7 +343,7 @@ app.use('/admin/delete/id/:id/', (req, res, next) => {
               ~removeIndex && data.reduc.splice(removeIndex, 1);
               fs.writeFile(__dirname + '/site/data.json', "data = " + JSON.stringify(data), (err) => {
                 if (err) logger.error(err);
-                res.redirect('../../');
+                res.redirect(mountUrl + 'admin/delete/');
               });
             });
           });
@@ -360,7 +362,7 @@ app.use('/admin/delete/id/:id/', (req, res, next) => {
               ~removeIndex && data.equiv.splice(removeIndex, 1);
               fs.writeFile(__dirname + '/site/data.json', "data = " + JSON.stringify(data), (err) => {
                 if (err) logger.error(err);
-                res.redirect('../../');
+                res.redirect(mountUrl + 'admin/delete/');
               });
             });
           });
@@ -436,7 +438,7 @@ app.post('/submit/type/:type/', function (req, res) {
                   req.session.submitted = true;
                   req.session.preview = false;
                   req.session.save(() => {
-                    res.redirect('../../../preview');
+                    res.redirect(mountUrl + 'preview');
                   });
                 });
               });
@@ -461,7 +463,7 @@ app.post('/submit/type/:type/', function (req, res) {
               req.session.submitted = true;
               req.session.preview = false;
               req.session.save(() => {
-                res.redirect('../../../preview');
+                res.redirect(mountUrl + 'preview');
               });
             });
           }
@@ -511,7 +513,7 @@ app.post('/submit/type/:type/', function (req, res) {
                   req.session.submitted = true;
                   req.session.preview = false;
                   req.session.save(() => {
-                    res.redirect('../../../preview');
+                    res.redirect(mountUrl + 'preview');
                   });
                 });
               });
@@ -528,7 +530,7 @@ app.post('/submit/type/:type/', function (req, res) {
               req.session.submitted = true;
               req.session.preview = false;
               req.session.save(() => {
-                res.redirect('../../../preview');
+                res.redirect(mountUrl + 'preview');
               });
             });
           }
@@ -583,7 +585,7 @@ app.post('/approve', function (req, res) {
               fs.writeFile(__dirname + '/admin/admin.json', 'data = ' + JSON.stringify(data), (err) => {
                 if (err) logger.error(err);
                 logger.info('updated site with ' + req.session.previewObj.new.map(obj => obj.id).toString());
-                res.redirect('../');
+                res.redirect(mountUrl);
               });
             });
           });
@@ -607,13 +609,13 @@ app.post('/approve', function (req, res) {
             if (err) logger.error(err);
             fs.unlink(__dirname + '/sessions/' + req.sessionID + '.json', (err) => {
               if (err) logger.error(err);
-                res.redirect('../');
+                res.redirect(mountUrl);
             });
           });
         });
       });
     } else {
-      res.redirect('../');
+      res.redirect(mountUrl);
     }
   }
 });
