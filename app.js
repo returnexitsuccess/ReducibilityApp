@@ -151,7 +151,7 @@ app.use('/preview', (req, res, next) => {
         const child = spawn(prog, ['convert.py', basepath + '/equivtex/', basepath + '/equiv/']);
         child.stderr.setEncoding('utf8');
         child.stderr.on('data', result => {
-          //console.log('stderr:' + result)
+          res.write(result + '\n');
         });
         child.on('exit', code => {
           if (code != 0) {
@@ -261,7 +261,7 @@ app.post('/login', function(req, res, next) {
     req.logIn(user, function(err) {
       if (err) { return next(err); }
       req.session.save(() => {
-        return res.redirect(mountUrl + 'admin');
+        return res.redirect(mountUrl + 'admin/');
       });
     });
   })(req, res, next);
