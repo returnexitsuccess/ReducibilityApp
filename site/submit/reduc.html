@@ -46,9 +46,9 @@
 
 <body>
   <h1>Reduction Submission</h1>
-  <form action="../submit/type/reduc/" method="post" enctype="multipart/form-data">
-    <p> Please upload your .tex file following the template found <a href="../reductemplate.tex">here</a>.</p>
-    <input type="file" name="uploadedfile" onchange="validate(this)" required><br>
+  <form action="../submit/type/reduc/" method="post" enctype="multipart/form-data" id="reducform">
+    Reduction Proofs (Tex allowed)<br>
+    <textarea name="proofs" form="reducform" required></textarea><br>
 
     Upper Equivalence Relation<br>
     <select name="upperselect" id="upperselect" required>

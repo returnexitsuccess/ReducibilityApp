@@ -151,13 +151,14 @@ app.use('/preview', (req, res, next) => {
         const child = spawn(prog, ['convert.py', basepath + '/equivtex/', basepath + '/equiv/']);
         child.stderr.setEncoding('utf8');
         child.stderr.on('data', result => {
-          res.write(result + '\n');
+          //res.write(result + '\n');
         });
         child.on('exit', code => {
           if (code != 0) {
             fs.unlink(__dirname + '/sessions/' + req.sessionID + '.json', (err) => {
               if (err) logger.error(err);
-              res.send(`Exited with code ${code}, tex failed to compile`);
+              res.write(`Exited with code ${code}, tex failed to compile`);
+              res.end();
             });
           } else {
             obj = createEquivObject(req.session.fields, req.session.filename);
@@ -203,33 +204,39 @@ app.use('/preview', (req, res, next) => {
           //console.log('stderr:' + result)
         });
         child.on('exit', code => {
-          //console.log(`Exited with ${code}`);
-          
-          fs.readFile(__dirname + '/previews/' + req.sessionID + '/data.json', (err, data) => {
-            if (err) logger.error(err);
-            jsonstr = data.slice(data.indexOf('=') + 1);
-            let json = JSON.parse(jsonstr);
-            
-            obj = createReducObject(req.session.fields, req.session.filename, json.equiv);
-            
-            if (!req.session.hasOwnProperty('reducdata')) {
-              req.session.reducdata = [obj];
-            } else {
-              req.session.reducdata.push(obj);
-            }
-            
-            json.reduc.push(obj);
-            fs.writeFile(__dirname + '/previews/' + req.sessionID + '/data.json', "data = " + JSON.stringify(json), (err) => {
+          if (code != 0) {
+            fs.unlink(__dirname + '/sessions/' + req.sessionID + '.json', (err) => {
               if (err) logger.error(err);
-              req.session.preview = true;
-              while (req.session.submitted !== true || req.session.preview !== true) {
-                setTimeout(() => {}, 100);
-              }
-              res.redirect(mountUrl + 'preview');
-              
-              next();
+              res.write(`Exited with code ${code}, tex failed to compile`);
+              res.end();
             });
-          });
+          } else {
+            fs.readFile(__dirname + '/previews/' + req.sessionID + '/data.json', (err, data) => {
+              if (err) logger.error(err);
+              jsonstr = data.slice(data.indexOf('=') + 1);
+              let json = JSON.parse(jsonstr);
+              
+              obj = createReducObject(req.session.fields, req.session.filename, json.equiv);
+              
+              if (!req.session.hasOwnProperty('reducdata')) {
+                req.session.reducdata = [obj];
+              } else {
+                req.session.reducdata.push(obj);
+              }
+              
+              json.reduc.push(obj);
+              fs.writeFile(__dirname + '/previews/' + req.sessionID + '/data.json', "data = " + JSON.stringify(json), (err) => {
+                if (err) logger.error(err);
+                req.session.preview = true;
+                while (req.session.submitted !== true || req.session.preview !== true) {
+                  setTimeout(() => {}, 100);
+                }
+                res.redirect(mountUrl + 'preview');
+                
+                next();
+              });
+            });
+          }
         });
       }
     } else {
@@ -481,7 +488,7 @@ app.post('/submit/type/:type/', function (req, res) {
         for (let i = 0; i < data.reduc.length; i++) {
           if (data.reduc[i].id === newid) {
             if (!req.session.passport) {
-              res.send(`Error: The file ${files.uploadedfile.name} already exists`);
+              res.send(`Error: The reduction ${newid} already exists`);
             } else {
               fs.unlink(__dirname + '/site/reduc/' + newid + '.html', (err) => {
                 if (err) logger.error(err);
@@ -489,11 +496,18 @@ app.post('/submit/type/:type/', function (req, res) {
             }
           }
         }
+        for (let i = 0; i < data.equiv.length; i++) {
+          if (data.equiv[i].id === fields.upperselect) {
+            fields.uppername = data.equiv[i].name;
+          }
+          if (data.equiv[i].id === fields.lowerselect) {
+            fields.lowername = data.equiv[i].name;
+          }
+        }
         
         req.session.submitted = true;
         req.session.preview = false;
         
-        let oldpath = files.uploadedfile.path;
         let newpath = __dirname + '/previews/' + req.sessionID + '/reductex/' + newid + '.tex';
         ensureExists(__dirname + '/previews/' + req.sessionID, 0777, function (err, exists) {
           if (err) logger.error(err);
@@ -502,11 +516,13 @@ app.post('/submit/type/:type/', function (req, res) {
               if (err) logger.error(err);
               fs.copyFile(__dirname + '/preview.css', __dirname + '/previews/' + req.sessionID + '/index.css', function (err) {
                 if (err) logger.error(err);
-                fs.copyFile(oldpath, newpath, function (err) {
+                let reductemplate = '\\documentclass{article}\n';
+                reductemplate += '\\begin{document}\n'
+                reductemplate += `\\section{Reduction of ${fields.uppername} to ${fields.lowername}}\n`;
+                reductemplate += fields.proof;
+                reductemplate += `\\end{document}`;
+                fs.writeFile(newpath, reductemplate, function (err) {
                   if (err) logger.error(err);
-                  fs.unlink(oldpath, function (err) {
-                    if (err) logger.error(err);
-                  });
                   req.session.filename = newid + '.tex';
                   req.session.fields = fields;
                   req.session.new = [{ type: 'reduc', id: newid }];
@@ -519,11 +535,13 @@ app.post('/submit/type/:type/', function (req, res) {
               });
             });
           } else {
-            fs.copyFile(oldpath, newpath, function (err) {
+            let reductemplate = '\\documentclass{article}\n';
+            reductemplate += '\\begin{document}\n'
+            reductemplate += `\\section{Reduction of ${fields.uppername} to ${fields.lowername}}\n`;
+            reductemplate += fields.proof;
+            reductemplate += `\\end{document}`;
+            fs.writeFile(newpath, reductemplate, function (err) {
               if (err) logger.error(err);
-              fs.unlink(oldpath, function (err) {
-                if (err) logger.error(err);
-              });
               req.session.filename = newid + '.tex';
               req.session.fields = fields;
               req.session.new.push({ type: 'reduc', id: newid });
