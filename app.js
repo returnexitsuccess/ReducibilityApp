@@ -41,7 +41,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 const schedule = require('node-schedule');
-var job = schedule.scheduleJob('*/10 * * * *', () => {
+var job = schedule.scheduleJob('0 * * * *', () => {
   getDirs(__dirname + '/previews', dirs => {
     for (let i = 0; i < dirs.length; i++) {
       logger.info(dirs[i]);
