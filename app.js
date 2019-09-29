@@ -132,6 +132,8 @@ app.use('/preview', (req, res, next) => {
     res.redirect(307, mountUrl + 'submit');
   } else if (req.url.endsWith('/approve')) {
     res.redirect(307, mountUrl + 'approve');
+  } else if (req.url.endsWith('/reset')) {
+    res.redirect(307, mountUrl + 'reset');
   } else {
     //console.log(req.session.submitted);
     if (req.session.submitted == true && req.session.preview == true) {
@@ -291,6 +293,8 @@ app.use('/admin/id/:id/', (req, res, next) => {
     res.redirect(307, mountUrl + 'submit');
   } else if (req.url.endsWith('/approve')) {
     res.redirect(307, mountUrl + 'approve');
+  } else if (req.url.endsWith('/reset')) {
+    res.redirect(307, mountUrl + 'reset');
   } else {
     //res.send(`Your id is ${req.params.id}`);
     if (req.session.passport) {
@@ -627,7 +631,7 @@ app.post('/approve', function (req, res) {
             if (err) logger.error(err);
             fs.unlink(__dirname + '/sessions/' + req.sessionID + '.json', (err) => {
               if (err) logger.error(err);
-                res.redirect(mountUrl);
+              res.redirect(mountUrl);
             });
           });
         });
@@ -636,6 +640,13 @@ app.post('/approve', function (req, res) {
       res.redirect(mountUrl);
     }
   }
+});
+
+app.use('/reset', (req, res, next) => {
+  fs.unlink(__dirname + '/sessions/' + req.sessionID + '.json', (err) => {
+    if (err) logger.error(err);
+    res.redirect(mountUrl + 'submit');
+  });
 });
  
 // Listen
