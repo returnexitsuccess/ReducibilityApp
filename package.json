@@ -19,11 +19,11 @@
   "homepage": "https://github.com/returnexitsuccess/ReducibilityApp#readme",
   "dependencies": {
     "bcrypt": "^3.0.6",
-    "body-parser": "^1.19.0",
+    "body-parser": "^1.20.1",
     "child_process": "^1.0.2",
     "cookie-parser": "^1.4.4",
     "edit-json-file": "^1.2.1",
-    "express": "^4.17.1",
+    "express": "^4.18.2",
     "express-session": "^1.16.2",
     "finalhandler": "^1.1.2",
     "formidable": "^1.2.1",
